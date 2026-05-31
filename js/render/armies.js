@@ -19,6 +19,9 @@ import {
   beginBatch,
   endBatch,
   undoLast,
+  enableSquadMembers,
+  disableSquadMembers,
+  updateMember,
 } from '../core/store.js';
 import {
   modelCount,
@@ -26,6 +29,14 @@ import {
   progressSegments,
   buildStateHexMap,
 } from '../core/pipeline.js';
+import {
+  hasSquadMembers,
+  squadSize,
+  squadStateSummary,
+  memberEffectiveState,
+  unitMatchesStateFilter,
+  unitPassesQuickView,
+} from '../core/members.js';
 import { DONE_STATES } from '../core/constants.js';
 import {
   CANONICAL_FACTIONS,
@@ -130,6 +141,19 @@ function allNoteTags() {
 
 let eventsBound = false;
 
+/** @type {Set<string>} */
+const collapsedSquads = new Set();
+
+function squadKey(armyName, index) {
+  return `${armyName}:${index}`;
+}
+
+/** @param {string} armyName @param {number} index @param {object} unit */
+function isSquadExpanded(armyName, index, unit) {
+  if (!hasSquadMembers(unit)) return false;
+  return !collapsedSquads.has(squadKey(armyName, index));
+}
+
 function collapsedSet() {
   return getCollapsedArmies();
 }
@@ -140,26 +164,19 @@ function allUnits() {
 
 function unitMatchesSearch(u, armyName, q) {
   if (!q) return true;
-  const hay = `${u.unit} ${u.source} ${u.state} ${u.notes || ''} ${armyName}`.toLowerCase();
+  const memberHay = u.members?.length
+    ? u.members.map(m => `${m.state || ''} ${m.notes || ''}`).join(' ')
+    : '';
+  const hay = `${u.unit} ${u.source} ${u.state} ${u.notes || ''} ${memberHay} ${armyName}`.toLowerCase();
   return hay.includes(q);
 }
 
-function unitPassesQuickView(u, pipeline) {
-  if (quickView === 'all') return true;
-  if (quickView === 'backlog') return u.state === pipeline[0]?.key;
-  if (quickView === 'wip') {
-    return !DONE_STATES.includes(u.state) && u.state !== pipeline[0]?.key;
-  }
-  if (quickView === 'ready') return DONE_STATES.includes(u.state);
-  return true;
-}
-
 function unitPassesFilters(u, pipeline) {
-  if (stateFilter !== 'All' && u.state !== stateFilter) return false;
+  if (!unitMatchesStateFilter(u, stateFilter)) return false;
   if (sourceFilter !== 'All' && (u.source || '') !== sourceFilter) return false;
   if (spearheadOnly && !u.spearhead) return false;
   if (tagFilter !== 'All' && !extractTags(u.notes).includes(tagFilter)) return false;
-  if (!unitPassesQuickView(u, pipeline)) return false;
+  if (!unitPassesQuickView(u, pipeline, quickView)) return false;
   return true;
 }
 
@@ -212,6 +229,23 @@ function nextStateKey(current, pipeline) {
   const i = pipeline.findIndex(p => p.key === current);
   if (i < 0 || i >= pipeline.length - 1) return null;
   return pipeline[i + 1].key;
+}
+
+/** @param {string} armyName @param {number} i @param {object} u @param {import('../core/constants.js').PipelineStage[]} pipeline */
+function advanceUnitOneStep(armyName, i, u, pipeline) {
+  const squadNext = nextStateKey(u.state, pipeline);
+  if (hasSquadMembers(u)) {
+    if (squadNext) updateUnit(armyName, i, { state: squadNext }, { silent: true, skipUndo: true });
+    u.members.forEach((_, mi) => {
+      const cur = memberEffectiveState(u, mi);
+      const next = nextStateKey(cur, pipeline);
+      if (!next) return;
+      const patch = next === u.state ? { state: '' } : { state: next };
+      updateMember(armyName, i, mi, patch, { silent: true });
+    });
+    return;
+  }
+  if (squadNext) updateUnit(armyName, i, { state: squadNext }, { silent: true, skipUndo: true });
 }
 
 export function renderArmyStats() {
@@ -405,35 +439,80 @@ export function renderArmyFilters(onChange) {
   host.scrollTop = scrollTop;
 }
 
+function stateSelectHtml(state, pipeline, stateHex, act) {
+  const hex = stateHex[state] || '#888';
+  const arrow = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='${encodeURIComponent(hex)}' stroke-width='1.6' fill='none'/%3E%3C/svg%3E`;
+  const opts = pipeline.map(p =>
+    `<option ${p.key === state ? 'selected' : ''}>${escapeHtml(p.key)}</option>`
+  ).join('');
+  return `<select class="state-sel" aria-label="Painting state" style="color:${safeColor(hex)};border-color:${safeColor(hex)}66;background-color:${safeColor(hex)}1a;background-image:url(&quot;${arrow}&quot;)" data-act="${act}">${opts}</select>`;
+}
+
+function memberRow(army, unit, unitIndex, memberIndex, pipeline, stateHex, showSpear) {
+  const st = memberEffectiveState(unit, memberIndex);
+  const hex = stateHex[st] || '#888';
+  const next = nextStateKey(st, pipeline);
+  const nextBtn = next
+    ? `<button class="next-st" type="button" data-act="member-next" title="Advance model to ${escapeAttr(next)}">→</button>`
+    : '';
+  const notes = unit.members?.[memberIndex]?.notes || '';
+  const noteTitle = notes.length > 48 ? escapeAttr(notes) : '';
+  const spearCell = showSpear ? '<span class="spear-no">—</span>' : '<span class="spear-no">—</span>';
+
+  return `<tr class="member-row" data-army="${escapeAttr(army.army)}" data-i="${unitIndex}" data-mi="${memberIndex}">
+    <td class="unit member-label"><span class="member-tag">#${memberIndex + 1}</span></td>
+    <td class="qty c">—</td>
+    <td class="c state-cell">${stateSelectHtml(st, pipeline, stateHex, 'member-state')}${nextBtn}</td>
+    <td class="c">${spearCell}</td>
+    <td><textarea class="note-in" rows="1" data-act="member-note" placeholder="model note…" aria-label="Model notes"${noteTitle ? ` title="${noteTitle}"` : ''}>${escapeHtml(notes)}</textarea></td>
+    <td></td>
+  </tr>`;
+}
+
 function unitRow(army, unit, index, pipeline, stateHex) {
   const showSpear = army.units.some(u => u.spearhead !== undefined);
   const hex = stateHex[unit.state] || '#888';
-  const arrow = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='${encodeURIComponent(hex)}' stroke-width='1.6' fill='none'/%3E%3C/svg%3E`;
-  const opts = pipeline.map(p =>
-    `<option ${p.key === unit.state ? 'selected' : ''}>${escapeHtml(p.key)}</option>`
-  ).join('');
   const next = nextStateKey(unit.state, pipeline);
   const nextBtn = next
-    ? `<button class="next-st" type="button" data-act="next" title="Advance to ${escapeAttr(next)}">→</button>`
+    ? `<button class="next-st" type="button" data-act="next" title="Advance squad default to ${escapeAttr(next)}">→</button>`
     : '';
   const spearCell = showSpear
     ? `<button type="button" class="spear-btn" data-act="spear" title="Toggle spearhead">${unit.spearhead ? '<span class="spear">★</span>' : '<span class="spear-no">·</span>'}</button>`
     : '<span class="spear-no">—</span>';
   const noteTitle = (unit.notes || '').length > 48 ? escapeAttr(unit.notes) : '';
+  const trackSquad = squadSize(unit) >= 2;
+  const expanded = isSquadExpanded(army.army, index, unit);
+  const squadBtn = trackSquad
+    ? `<button type="button" class="squad-btn" data-act="squad-toggle" title="Per-model tracking" aria-expanded="${expanded}">${expanded ? '▾' : '▸'}</button>`
+    : '';
+  const summary = hasSquadMembers(unit) && squadStateSummary(unit)
+    ? `<div class="squad-summary">${escapeHtml(squadStateSummary(unit))}</div>`
+    : '';
+  const squadOff = hasSquadMembers(unit)
+    ? `<button class="squad-off" type="button" data-act="squad-off" title="Track as single unit">⊟</button>`
+    : '';
 
-  return `<tr data-army="${escapeAttr(army.army)}" data-i="${index}">
-    <td class="unit"><input class="inline-in unit-name-in" value="${escapeAttr(unit.unit)}" data-act="unit" aria-label="Unit name">
+  let rows = `<tr data-army="${escapeAttr(army.army)}" data-i="${index}"${hasSquadMembers(unit) ? ' class="squad-parent"' : ''}>
+    <td class="unit">${squadBtn}<input class="inline-in unit-name-in" value="${escapeAttr(unit.unit)}" data-act="unit" aria-label="Unit name">
       <input class="inline-in src-in" value="${escapeAttr(unit.source || '')}" data-act="source" placeholder="source" aria-label="Source"></td>
     <td class="qty"><input class="inline-in qty-in" type="number" min="1" value="${unit.qty || 1}" data-act="qty" aria-label="Quantity"></td>
-    <td class="c state-cell"><select class="state-sel" aria-label="Painting state" style="color:${safeColor(hex)};border-color:${safeColor(hex)}66;background-color:${safeColor(hex)}1a;background-image:url(&quot;${arrow}&quot;)" data-act="state">${opts}</select>${nextBtn}</td>
+    <td class="c state-cell">${stateSelectHtml(unit.state, pipeline, stateHex, 'state')}${nextBtn}${summary}</td>
     <td class="c">${spearCell}</td>
-    <td><textarea class="note-in" rows="1" data-act="note" placeholder="add note…" aria-label="Notes"${noteTitle ? ` title="${noteTitle}"` : ''}>${escapeHtml(unit.notes || '')}</textarea></td>
+    <td><textarea class="note-in" rows="1" data-act="note" placeholder="squad note…" aria-label="Squad notes"${noteTitle ? ` title="${noteTitle}"` : ''}>${escapeHtml(unit.notes || '')}</textarea></td>
     <td class="row-actions">
+      ${squadOff}
       <button class="dup" type="button" data-act="dup" title="Duplicate row">⧉</button>
       <button class="mov" type="button" data-act="move" title="Move to another army">⇄</button>
       <button class="del" type="button" title="Remove" data-act="del">✕</button>
     </td>
   </tr>`;
+
+  if (expanded && hasSquadMembers(unit)) {
+    for (let m = 0; m < unit.members.length; m++) {
+      rows += memberRow(army, unit, index, m, pipeline, stateHex, showSpear);
+    }
+  }
+  return rows;
 }
 
 function armyBlock(army, pipeline) {
@@ -576,6 +655,29 @@ function bindArmyEvents(onChange) {
       return;
     }
 
+    if (act === 'squad-toggle' && armyName != null) {
+      const { u } = findUnit(armyName, index);
+      const key = squadKey(armyName, index);
+      if (!u || squadSize(u) < 2) return;
+      if (!hasSquadMembers(u)) {
+        enableSquadMembers(armyName, index);
+        collapsedSquads.delete(key);
+      } else if (isSquadExpanded(armyName, index, u)) {
+        collapsedSquads.add(key);
+      } else {
+        collapsedSquads.delete(key);
+      }
+      onChange();
+      return;
+    }
+
+    if (act === 'squad-off' && armyName != null) {
+      collapsedSquads.delete(squadKey(armyName, index));
+      disableSquadMembers(armyName, index);
+      onChange();
+      return;
+    }
+
     if (act === 'next' && armyName != null && tr) {
       const army = getState().collection.find(a => a.army === armyName);
       const { u } = findUnit(armyName, index);
@@ -588,6 +690,22 @@ function bindArmyEvents(onChange) {
       return;
     }
 
+    if (act === 'member-next' && armyName != null && tr) {
+      const army = getState().collection.find(a => a.army === armyName);
+      const { u } = findUnit(armyName, index);
+      const mi = tr.dataset.mi != null ? +tr.dataset.mi : -1;
+      const pipeline = getArmyPipeline(army);
+      if (!u || mi < 0) return;
+      const cur = memberEffectiveState(u, mi);
+      const next = nextStateKey(cur, pipeline);
+      if (next) {
+        const patch = next === u.state ? { state: '' } : { state: next };
+        updateMember(armyName, index, mi, patch);
+        onChange();
+      }
+      return;
+    }
+
     if (act === 'bulk-next' && armyName) {
       const army = getState().collection.find(a => a.army === armyName);
       if (!army) return;
@@ -595,15 +713,14 @@ function bindArmyEvents(onChange) {
       /** @type {{ armyName: string, index: number, state: string }[]} */
       const changes = [];
       army.units.forEach((u, i) => {
-        const next = nextStateKey(u.state, pipeline);
-        if (next) changes.push({ armyName, index: i, state: u.state });
+        const squadNext = nextStateKey(u.state, pipeline);
+        const memberNext = hasSquadMembers(u)
+          && u.members.some((_, mi) => nextStateKey(memberEffectiveState(u, mi), pipeline));
+        if (squadNext || memberNext) changes.push({ armyName, index: i, state: u.state });
       });
       pushUndoBatchStates(changes);
       beginBatch({ silent: true });
-      army.units.forEach((u, i) => {
-        const next = nextStateKey(u.state, pipeline);
-        if (next) updateUnit(armyName, i, { state: next }, { silent: true, skipUndo: true });
-      });
+      army.units.forEach((u, i) => advanceUnitOneStep(armyName, i, u, pipeline));
       endBatch('collection');
       onChange();
       return;
@@ -674,6 +791,14 @@ function bindArmyEvents(onChange) {
       updateUnit(armyName, index, { state: target.value });
       onChange();
     }
+    if (act === 'member-state' && target instanceof HTMLSelectElement) {
+      const mi = tr.dataset.mi != null ? +tr.dataset.mi : -1;
+      const { u } = findUnit(armyName, index);
+      if (!u || mi < 0) return;
+      const patch = target.value === u.state ? { state: '' } : { state: target.value };
+      updateMember(armyName, index, mi, patch);
+      onChange();
+    }
     if (act === 'qty' && target instanceof HTMLInputElement) {
       const q = Math.max(1, +target.value || 1);
       target.value = String(q);
@@ -696,15 +821,23 @@ function bindArmyEvents(onChange) {
 
   host.addEventListener('input', e => {
     const target = /** @type {HTMLElement} */ (e.target);
-    if (target.getAttribute('data-act') === 'note' && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    const act = target.getAttribute('data-act');
+    if ((act === 'note' || act === 'member-note')
+      && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
       const tr = target.closest('tr[data-army]');
       if (!tr) return;
       const armyName = tr.dataset.army || '';
       const index = +tr.dataset.i;
-      const key = `${armyName}:${index}`;
+      const mi = tr.dataset.mi != null ? +tr.dataset.mi : -1;
+      const key = mi >= 0 ? `${armyName}:${index}:m${mi}` : `${armyName}:${index}`;
       clearTimeout(noteTimers.get(key));
       noteTimers.set(key, setTimeout(() => {
-        updateUnit(armyName, index, { notes: target.value }, { silent: true });
+        if (act === 'member-note' && mi >= 0) {
+          const patch = target.value ? { notes: target.value } : { notes: '' };
+          updateMember(armyName, index, mi, patch, { silent: true });
+        } else {
+          updateUnit(armyName, index, { notes: target.value }, { silent: true });
+        }
         noteTimers.delete(key);
       }, 300));
     }
@@ -828,20 +961,20 @@ export function advanceVisibleUnits() {
     va.units.forEach(vu => {
       const i = army.units.indexOf(vu);
       if (i < 0) return;
-      const next = nextStateKey(vu.state, pipeline);
-      if (next) changes.push({ armyName: va.army, index: i, state: vu.state });
+      const squadNext = nextStateKey(vu.state, pipeline);
+      const memberNext = hasSquadMembers(vu)
+        && vu.members.some((_, mi) => nextStateKey(memberEffectiveState(vu, mi), pipeline));
+      if (squadNext || memberNext) changes.push({ armyName: va.army, index: i, state: vu.state });
     });
   });
   if (!changes.length) return;
   pushUndoBatchStates(changes);
   beginBatch({ silent: true });
-  changes.forEach(({ armyName, index, state: _prev }) => {
+  changes.forEach(({ armyName, index }) => {
     const army = getState().collection.find(a => a.army === armyName);
     if (!army) return;
-    const pipeline = getArmyPipeline(army);
     const u = army.units[index];
-    const next = u ? nextStateKey(u.state, pipeline) : null;
-    if (next) updateUnit(armyName, index, { state: next }, { silent: true, skipUndo: true });
+    if (u) advanceUnitOneStep(armyName, index, u, getArmyPipeline(army));
   });
   endBatch('collection');
   domainRefresh?.();

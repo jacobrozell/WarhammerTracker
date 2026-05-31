@@ -3,8 +3,8 @@ export const ARMY_SCHEMA = {
   label: 'Muster Roll Armies',
   filename: 'warhammer_armies.csv',
   required: ['game', 'faction', 'army', 'unit'],
-  optional: ['qty', 'source', 'state', 'spearhead', 'notes', 'crest', 'color'],
-  exportHeaders: ['Game', 'Faction', 'Army', 'Unit', 'Qty', 'Source', 'State', 'Spearhead', 'Notes', 'Crest', 'Color'],
+  optional: ['qty', 'source', 'state', 'spearhead', 'notes', 'crest', 'color', 'member', 'memberstate', 'membernotes'],
+  exportHeaders: ['Game', 'Faction', 'Army', 'Unit', 'Qty', 'Source', 'State', 'Spearhead', 'Notes', 'Member', 'MemberState', 'MemberNotes', 'Crest', 'Color'],
   template: 'Game,Faction,Army,Unit,Qty,Source,State,Spearhead,Notes,Crest,Color\n40k,Space Marines,My Chapter,Intercessors (5),1,Starter Set,Unassembled,,,SM,#1c4fa0\n',
 };
 

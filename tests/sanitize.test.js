@@ -44,6 +44,24 @@ describe('sanitize', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('sanitizes squad members on units', () => {
+    const result = sanitizeAppState({
+      collection: [{
+        army: 'GK', game: '40k', faction: 'GK', crest: 'GK', color: '#111',
+        units: [{
+          unit: 'Terminators (5)', qty: 1, state: 'Magnetising',
+          members: [{}, { state: 'Primed', notes: 'test' }],
+        }],
+      }],
+      paints: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.collection[0].units[0].members).toHaveLength(2);
+      expect(result.state.collection[0].units[0].members[1].state).toBe('Primed');
+    }
+  });
+
   it('returns preview counts', () => {
     const json = JSON.stringify({
       version: 3,

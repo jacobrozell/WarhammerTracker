@@ -1,4 +1,7 @@
 import { DEFAULT_PIPELINE } from './constants.js';
+import { hasSquadMembers, eachMemberEffectiveState, modelCount } from './members.js';
+
+export { modelCount };
 
 /** @param {import('./constants.js').PipelineStage[]} pipeline */
 export function buildPipelineIndex(pipeline) {
@@ -49,6 +52,12 @@ export function stateProgress(state, pipeline) {
 
 /** Weighted progress for one unit (0–1). */
 export function unitWeightedProgress(unit, pipeline) {
+  if (hasSquadMembers(unit)) {
+    return eachMemberEffectiveState(unit).reduce(
+      (s, st) => s + stateProgress(st, pipeline),
+      0,
+    );
+  }
   return stateProgress(unit.state, pipeline) * modelCount(unit);
 }
 
@@ -65,22 +74,18 @@ export function progressSegments(units, pipeline) {
   if (!totalModels) return [];
   const counts = {};
   units.forEach(u => {
-    const w = modelCount(u);
-    counts[u.state] = (counts[u.state] || 0) + w;
+    if (hasSquadMembers(u)) {
+      eachMemberEffectiveState(u).forEach(st => {
+        counts[st] = (counts[st] || 0) + 1;
+      });
+    } else {
+      const w = modelCount(u);
+      counts[u.state] = (counts[u.state] || 0) + w;
+    }
   });
   return pipeline
     .filter(p => counts[p.key])
     .map(p => ({ key: p.key, hex: p.hex, pct: (counts[p.key] / totalModels) * 100 }));
-}
-
-/** @param {object} unit */
-export function modelCount(unit) {
-  const m = unit.unit.match(/\(([^)]*)\)/);
-  if (m) {
-    const n = m[1].match(/\d+/g);
-    if (n) return n.reduce((a, b) => a + +b, 0) * (unit.qty || 1);
-  }
-  return unit.qty || 1;
 }
 
 /** @param {import('./constants.js').Army|null|undefined} [army] @param {import('./constants.js').PipelineStage[]|null|undefined} [custom] */

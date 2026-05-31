@@ -29,6 +29,7 @@ _Audit: 2026-05-31 (technical). User journey audit: 2026-05-31 — see [User aud
 - [x] **Notes tags** — `#tag` in notes; Tag filter chips
 - [ ] **Unit photos, points, loadout, codex version**
 - [ ] **Army stable IDs** — survive CSV renames without duplicate army blocks
+- [x] **Squad per-model tracking** — expand multi-model units; per-member state/notes; CSV Member columns
 - [ ] **Squad / project grouping** — relate split rows across armies
 
 ### Paints — functionality

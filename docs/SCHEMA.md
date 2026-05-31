@@ -23,6 +23,9 @@ One row per **unit entry**. Multiple rows with the same `Army` value are grouped
 | `State`    | no       | enum    | Painting/build pipeline stage (default `Unassembled`). See [Pipeline states](#pipeline-states). |
 | `Spearhead`| no       | boolean | `Yes` / `No` (also `true`/`false`, `1`/`0`). Omit for games that do not use spearhead lists (e.g. 40k). |
 | `Notes`    | no       | string  | Free-text notes shown inline in the tracker. |
+| `Member`   | no       | integer | When tracking models individually in a squad, the 1-based model index (e.g. `1`–`5` for `Terminators (5)`). Multiple rows with the same `Army`, `Unit`, `Qty`, and `Source` merge into one entry with per-model overrides. |
+| `MemberState` | no    | enum    | Override pipeline state for that model; omit to inherit the row’s `State`. |
+| `MemberNotes` | no    | string  | Per-model notes (e.g. test recipe on one model). |
 | `Crest`    | no       | string  | Custom crest abbreviation (≤8 chars) for this army; sets an override on import. |
 | `Color`    | no       | string  | Custom accent hex (e.g. `#1c4fa0`) for this army; sets an override on import. |
 

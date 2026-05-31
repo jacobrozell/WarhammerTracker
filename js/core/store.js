@@ -7,6 +7,14 @@ import {
 } from './constants.js';
 import { STORAGE_BUDGET_BYTES, STORAGE_WARN_RATIO } from './limits.js';
 import { resolvePipeline, getPipelineForArmy } from './pipeline.js';
+import {
+  ensureSquadMembers,
+  clearSquadMembers,
+  setMember,
+  resizeSquadMembers,
+  squadSize,
+  hasSquadMembers,
+} from './members.js';
 import { sanitizeAppState, parseBackup } from '../data/sanitize.js';
 import { resolveFactionPreset, syncArmyThemeFromPresets } from '../data/faction-presets.js';
 
@@ -198,6 +206,44 @@ export function updateUnit(armyName, index, patch, opts = {}) {
     pushUndo({ type: 'unit-state', payload: { armyName, index, state: unit.state } });
   }
   Object.assign(unit, patch);
+  if (hasSquadMembers(unit)) resizeSquadMembers(unit);
+  persist('collection', opts);
+  return true;
+}
+
+/** @param {string} armyName @param {number} index */
+export function enableSquadMembers(armyName, index) {
+  const army = state.collection.find(a => a.army === armyName);
+  const unit = army?.units[index];
+  if (!unit || squadSize(unit) < 2) return false;
+  ensureSquadMembers(unit);
+  persist('collection');
+  return true;
+}
+
+/** @param {string} armyName @param {number} index */
+export function disableSquadMembers(armyName, index) {
+  const army = state.collection.find(a => a.army === armyName);
+  const unit = army?.units[index];
+  if (!unit || !hasSquadMembers(unit)) return false;
+  clearSquadMembers(unit);
+  persist('collection');
+  return true;
+}
+
+/**
+ * @param {string} armyName
+ * @param {number} unitIndex
+ * @param {number} memberIndex
+ * @param {Partial<{ state: string, notes: string }>} patch
+ * @param {{ silent?: boolean }} [opts]
+ */
+export function updateMember(armyName, unitIndex, memberIndex, patch, opts = {}) {
+  const army = state.collection.find(a => a.army === armyName);
+  const unit = army?.units[unitIndex];
+  if (!unit || !hasSquadMembers(unit)) return false;
+  if (memberIndex < 0 || memberIndex >= unit.members.length) return false;
+  setMember(unit, memberIndex, patch);
   persist('collection', opts);
   return true;
 }
@@ -328,7 +374,8 @@ export function mergeArmyDuplicates(armyName) {
   /** @type {Map<string, object>} */
   const merged = new Map();
   army.units.forEach(u => {
-    const key = `${u.unit}\0${u.source || ''}\0${u.state}\0${u.spearhead ?? ''}`;
+    const mem = u.members?.length ? JSON.stringify(u.members) : '';
+    const key = `${u.unit}\0${u.source || ''}\0${u.state}\0${u.spearhead ?? ''}\0${mem}`;
     const existing = merged.get(key);
     if (existing) {
       existing.qty = (existing.qty || 1) + (u.qty || 1);

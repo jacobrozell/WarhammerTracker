@@ -151,14 +151,26 @@ export function exportArmiesCSV() {
   collection.forEach(a => {
     const { crest, color } = getArmyPresentation(a, settings.factionPresets);
     a.units.forEach(u => {
-      rows.push([
+      const base = [
         a.game, a.faction, a.army, u.unit, u.qty || 1, u.source || '',
         u.state,
         u.spearhead === undefined ? '' : (u.spearhead ? 'Yes' : 'No'),
         u.notes || '',
-        crest,
-        color,
-      ]);
+      ];
+      if (u.members?.length) {
+        u.members.forEach((m, i) => {
+          rows.push([
+            ...base,
+            String(i + 1),
+            m.state || '',
+            m.notes || '',
+            crest,
+            color,
+          ]);
+        });
+      } else {
+        rows.push([...base, '', '', '', crest, color]);
+      }
     });
   });
   downloadText(serializeCSV(rows), `warhammer_armies_${stamp()}.csv`);

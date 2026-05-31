@@ -3,6 +3,12 @@ import { resolveFactionPreset, isFallbackPreset } from '../data/faction-presets.
 import { safeColor } from '../core/dom.js';
 import { normalizeState } from '../core/pipeline.js';
 import { detectMusterArmies } from '../data/schema.js';
+import {
+  squadGroupKey,
+  ensureSquadMembers,
+  setMember,
+  squadSize,
+} from '../core/members.js';
 
 /** @param {string[][]} rows @param {(n: string) => number} col @param {string} name */
 function optionalCol(rows, col, name) {
@@ -21,6 +27,9 @@ export function importMusterArmies(rows, ctx) {
   const { col } = hm;
   const crestCol = optionalCol(rows, col, 'crest');
   const colorCol = optionalCol(rows, col, 'color');
+  const memberCol = optionalCol(rows, col, 'member');
+  const memberStateCol = optionalCol(rows, col, 'memberstate');
+  const memberNotesCol = optionalCol(rows, col, 'membernotes');
   const errors = [];
   const warnings = [];
   const order = [];
@@ -79,6 +88,45 @@ export function importMusterArmies(rows, ctx) {
 
     const nt = (r[col('notes')] || '').trim();
     if (nt) u.notes = nt;
+
+    const memberRaw = memberCol >= 0 ? (r[memberCol] || '').trim() : '';
+    const memberNum = memberRaw ? parseInt(memberRaw, 10) : NaN;
+
+    if (memberCol >= 0 && memberRaw && (!Number.isFinite(memberNum) || memberNum < 1)) {
+      warnings.push(`Row ${line}: invalid Member "${memberRaw}" — skipping member data`);
+      map[army].units.push(u);
+      return;
+    }
+
+    if (memberCol >= 0 && Number.isFinite(memberNum) && memberNum >= 1) {
+      let existing = map[army].units.find(x => squadGroupKey(x, u));
+      if (!existing) {
+        existing = u;
+        map[army].units.push(existing);
+      }
+      ensureSquadMembers(existing);
+      const max = squadSize(existing);
+      if (memberNum > max) {
+        warnings.push(`Row ${line}: Member ${memberNum} exceeds squad size (${max})`);
+      } else {
+        /** @type {{ state?: string, notes?: string }} */
+        const patch = {};
+        if (memberStateCol >= 0) {
+          const rawMs = (r[memberStateCol] || '').trim();
+          if (rawMs) {
+            const ms = normalizeState(rawMs, ctx.pipeline);
+            if (ms.warn) warnings.push(`Row ${line}: ${ms.warn}`);
+            patch.state = ms.state;
+          }
+        }
+        if (memberNotesCol >= 0) {
+          const mn = (r[memberNotesCol] || '').trim();
+          if (mn) patch.notes = mn;
+        }
+        setMember(existing, memberNum - 1, patch);
+      }
+      return;
+    }
 
     map[army].units.push(u);
   });

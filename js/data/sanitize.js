@@ -114,6 +114,18 @@ export function sanitizeAppState(raw, opts = {}) {
           };
           if (unit.spearhead === true) row.spearhead = true;
           else if (unit.spearhead === false) row.spearhead = false;
+          if (Array.isArray(unit.members) && unit.members.length) {
+            row.members = unit.members.slice(0, 99).map(m => {
+              const mem = /** @type {Record<string, unknown>} */ (m && typeof m === 'object' ? m : {});
+              /** @type {{ state?: string, notes?: string }} */
+              const out = {};
+              const st = capStr(mem.state, MAX_STRING_LEN);
+              const nt = capStr(mem.notes, MAX_NOTES_LEN);
+              if (st) out.state = st;
+              if (nt) out.notes = nt;
+              return out;
+            });
+          }
           return row;
         }),
       };

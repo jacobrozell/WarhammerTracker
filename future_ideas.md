@@ -20,7 +20,7 @@ Extension points: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 5. **Per-army pipeline** — skip magnetising etc. for armies that do not use it
 6. **Painting queue / journal** — “up next”, finished-this-month history
 7. **Notes tags** — filter e.g. “repaint candidate”
-8. **Squad / project grouping** — relate split rows across armies
+8. **Squad / project grouping** — relate split rows across armies (per-model tracking shipped in app)
 9. **Qty rollup** — collapse duplicate unit rows automatically
 10. **Unit photos & points / loadout / codex version**
 11. **List virtualization** — 500+ rows without full `innerHTML` rebuild
