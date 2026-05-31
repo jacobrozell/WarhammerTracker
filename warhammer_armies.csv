@@ -1,0 +1,53 @@
+Game,Faction,Army,Unit,Qty,Source,State,Spearhead,Notes
+AoS,Stormcast Eternals,Hallowed Knights,Lord-Vigilant on Gryph-stalker,1,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Lord-Terminos + Memorian,1,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Lord-Veritant + Gryph-crow,1,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Knight-Questor,1,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Reclusians + Memorians (x3 + x2),1,Skaventide,Assembled,No,
+AoS,Stormcast Eternals,Hallowed Knights,Prosecutors,3,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Liberators (5),1,Skaventide,Based,Yes,
+AoS,Stormcast Eternals,Hallowed Knights,Liberators (5),1,Skaventide,Assembled,No,
+AoS,Stormcast Eternals,Hallowed Knights,Liberators (3),1,Stormcast Painting Kit,Assembled,No,
+AoS,Skaven,Vermindoom,Clawlord on Gnaw-Beast,1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Grey Seer,1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Warlock Engineer,1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Ratling Warpblaster,1,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Rat Ogors,3,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Warplock Jezzails,3,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Based,Yes,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaventide,Assembled,No,
+AoS,Skaven,Vermindoom,Clanrats (5),1,Skaven Painting Kit,Assembled,No,
+AoS,Terrain,Skaventide,Sigmarite Ruin,1,Skaventide,Unassembled,Yes,
+AoS,Terrain,Skaventide,Sigmarite Ruin,1,Skaventide,Unassembled,Yes,
+AoS,Terrain,Skaventide,Scatter Terrain,1,Skaventide,Unassembled,Yes,
+AoS,Terrain,Skaventide,Scatter Terrain,1,Skaventide,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece,1,Sand & Bone Gaming Pack,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece,1,Sand & Bone Gaming Pack,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece (ability),1,Sand & Bone Gaming Pack,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece (ability),1,Sand & Bone Gaming Pack,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece,1,Sand & Bone Gaming Pack,Unassembled,Yes,
+AoS,Terrain,Sand & Bone,Shyish Terrain Piece,1,Sand & Bone Gaming Pack,Unassembled,Yes,
+40k,Grey Knights,Grey Knights,Castellan Crowe,1,Combat Patrol 1,Based,,No magnets
+40k,Grey Knights,Grey Knights,Venerable Dreadnought,1,Combat Patrol 1,Based,,Arms magnetised - cosmetic variant A
+40k,Grey Knights,Grey Knights,Nemesis Dreadknight (GMDK),1,Combat Patrol 1,Magnetising,,Magnetising weapon options
+40k,Grey Knights,Grey Knights,Nemesis Dreadknight,1,Combat Patrol 2,Magnetising,,Magnetising weapon options
+40k,Grey Knights,Grey Knights,Brotherhood Terminators (5),1,Combat Patrol 1,Assembled,,Includes banner bearer (Ancient)
+40k,Grey Knights,Grey Knights,Brotherhood Terminators (5),1,Combat Patrol 2,Assembled,,Part of 10-man squad
+40k,Grey Knights,Grey Knights,Purifiers (5),1,Combat Patrol 1,Primed,,Heavy weapon needs magnets still
+40k,Grey Knights,Grey Knights,Strike Squad (5),1,Combat Patrol 1,Unassembled,,Build TBD
+40k,Grey Knights,Grey Knights,Strike Squad (5),1,Combat Patrol 2,Unassembled,,Build TBD
+40k,Grey Knights,Grey Knights,Strike Squad (5),1,Combat Patrol 2,Unassembled,,Build TBD
+40k,Grey Knights,Grey Knights,Strike Squad (5),1,Strike Squad Kit,Unassembled,,Build TBD
+40k,Grey Knights,Grey Knights,Venerable Dreadnought,1,Ultramarines Collection,Assembled,,Painting as Grey Knights — magnetising TBD
+40k,Ultramarines,Ultramarines,Primaris Captain,1,Know No Fear,Done,,Repaint candidate — beginner paint job
+40k,Ultramarines,Ultramarines,Intercessors (5),1,Know No Fear,Done,,Repaint candidate — beginner paint job
+40k,Ultramarines,Ultramarines,Inceptors (3),1,Know No Fear,Done,,Repaint candidate — beginner paint job
+40k,Ultramarines,Ultramarines,Hellblasters (5),1,Know No Fear,Done,,Repaint candidate — beginner paint job
+40k,Ultramarines,Ultramarines,Terminator Captain,1,Gift,Assembled,,Needs paint — magnet options TBD
+40k,Ultramarines,Ultramarines,Tactical Marines (10),1,Gift,Assembled,,Needs paint

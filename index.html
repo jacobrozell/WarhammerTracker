@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Muster Roll — Warhammer Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="mast">
+      <div class="mast-top">
+        <div class="mast-copy">
+          <div class="eyebrow">Personal Archive · Catalogued by Hand</div>
+          <h1>The Muster Roll</h1>
+          <div class="sub">Track armies and paints in one place. Import your CSVs to get started — everything saves in this browser automatically. Export anytime for backup.</div>
+        </div>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">☀</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab on" data-tab="armies" type="button">⚔ Armies</button>
+      <button class="tab" data-tab="paints" type="button">🎨 Paint Stores</button>
+    </div>
+
+    <div id="tab-armies">
+      <div class="stats" id="stats"></div>
+      <div class="meter-wrap">
+        <div class="meter-top">
+          <span class="lab">Collection Progress (weighted across pipeline)</span>
+          <span class="pct" id="overallPct">0%</span>
+        </div>
+        <div class="meter" id="overallMeter"></div>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="search" placeholder="Search units, factions, sources…">
+        <button class="btn" id="expandAll" type="button">Expand</button>
+        <button class="btn" id="collapseAll" type="button">Collapse</button>
+        <button class="btn" id="importBtn" type="button">⬆ Import Armies CSV</button>
+        <button class="btn" id="templateArmies" type="button">📄 Army Template</button>
+        <button class="btn gold" id="exportArmies" type="button">⬇ Export Armies</button>
+        <input type="file" id="fileInputArmies" accept=".csv,text/csv" class="hidden">
+      </div>
+      <div class="filters" id="filters"></div>
+      <div id="armies"></div>
+    </div>
+
+    <div id="tab-paints" class="hidden">
+      <div class="stats" id="paintStats"></div>
+      <div class="toolbar">
+        <input class="search" id="paintSearch" placeholder="Search paints…">
+        <button class="btn" id="importBtn2" type="button">⬆ Import Paints CSV</button>
+        <button class="btn" id="templatePaints" type="button">📄 Paint Template</button>
+        <button class="btn gold" id="exportPaints" type="button">⬇ Export Paints</button>
+        <input type="file" id="fileInputPaints" accept=".csv,text/csv" class="hidden">
+      </div>
+      <div class="filters" id="paintFilters"></div>
+      <div class="paint-grid" id="paints"></div>
+    </div>
+
+    <footer>For the Emperor · For the Great Horned Rat · Sigmar Watches</footer>
+  </div>
+
+  <div class="save-toast" id="toast">Saved locally</div>
+  <div class="modal-back" id="importModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="importModalTitle">
+      <div class="modal-head">
+        <h2 id="importModalTitle">Import result</h2>
+        <button class="modal-close" id="importModalClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body" id="importModalBody"></div>
+      <div class="modal-foot"><button class="btn gold" id="importModalOk" type="button">Done</button></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

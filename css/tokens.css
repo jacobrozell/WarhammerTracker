@@ -1,0 +1,55 @@
+/* Theme tokens — dark is default (matches original aesthetic) */
+:root,
+[data-theme="dark"] {
+  --bg: #0b0c0f;
+  --bg2: #101218;
+  --surface: #15171e;
+  --surface2: #1b1e27;
+  --line: #2a2d38;
+  --line-warm: rgba(201, 164, 76, 0.22);
+  --ink: #e8e5dc;
+  --ink-dim: #9a978c;
+  --ink-faint: #65636b;
+  --gold: #c9a44c;
+  --gold-bright: #e6c878;
+  --blood: #8c2b22;
+  --crest-text: #0b0c0f;
+  --chip-on-text: #1a1407;
+  --toast-text: #1a1407;
+  --tab-on-bg-start: #3a2f12;
+  --tab-on-bg-end: #241c08;
+  --btn-gold-bg-start: #3a2f12;
+  --btn-gold-bg-end: #241c08;
+  --modal-backdrop: rgba(0, 0, 0, 0.65);
+  --body-gradient-a: rgba(201, 164, 76, 0.06);
+  --body-gradient-b: rgba(140, 43, 34, 0.08);
+  --noise-opacity: 0.035;
+  --err: #f87171;
+}
+
+[data-theme="light"] {
+  --bg: #f4f1ea;
+  --bg2: #ebe6dc;
+  --surface: #fffdf8;
+  --surface2: #f0ebe3;
+  --line: #d4cfc4;
+  --line-warm: rgba(140, 100, 30, 0.25);
+  --ink: #1a1814;
+  --ink-dim: #5c574e;
+  --ink-faint: #8a8478;
+  --gold: #9a7428;
+  --gold-bright: #7a5a18;
+  --blood: #a83228;
+  --crest-text: #fffdf8;
+  --chip-on-text: #fffdf8;
+  --toast-text: #fffdf8;
+  --tab-on-bg-start: #c9a44c;
+  --tab-on-bg-end: #a88432;
+  --btn-gold-bg-start: #c9a44c;
+  --btn-gold-bg-end: #a88432;
+  --modal-backdrop: rgba(26, 24, 20, 0.45);
+  --body-gradient-a: rgba(201, 164, 76, 0.12);
+  --body-gradient-b: rgba(140, 43, 34, 0.06);
+  --noise-opacity: 0.02;
+  --err: #dc2626;
+}
