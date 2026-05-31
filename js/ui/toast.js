@@ -9,9 +9,3 @@ export function toast(message) {
   clearTimeout(timer);
   timer = setTimeout(() => el.classList.remove('show'), 1600);
 }
-
-/** @param {() => void} onSave */
-export function toastSaved(onSave) {
-  onSave();
-  toast('Saved locally');
-}

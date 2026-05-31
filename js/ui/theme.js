@@ -1,7 +1,5 @@
 import { getState, patchSettings } from '../core/store.js';
 
-const STORAGE_THEME = 'musterRoll.theme';
-
 function systemPrefersDark() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
@@ -22,8 +20,7 @@ function applyResolved(resolved) {
 
 export function initTheme() {
   const { settings } = getState();
-  const stored = settings.theme || localStorage.getItem(STORAGE_THEME) || 'dark';
-  applyResolved(resolveTheme(/** @type {'dark'|'light'|'system'} */ (stored)));
+  applyResolved(resolveTheme(settings.theme));
 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { settings: s } = getState();

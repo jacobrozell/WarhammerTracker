@@ -1,3 +1,5 @@
+import { escapeHtml } from '../core/dom.js';
+
 /** @param {import('../data/csv.js').ImportResult} result */
 export function showImportResult(title, result) {
   const modal = document.getElementById('importModal');
@@ -12,18 +14,18 @@ export function showImportResult(title, result) {
     const parts = result.stats.armies != null
       ? `${result.stats.armies} ${result.stats.armies === 1 ? 'army' : 'armies'}, ${result.stats.units} unit entries`
       : `${result.stats.paints} paints`;
-    html += `<p class="ok">Imported ${parts}.</p>`;
+    html += `<p class="ok">Imported ${escapeHtml(parts)}.</p>`;
   } else {
     html += '<p class="err">Import failed.</p>';
   }
 
   if (result.errors.length) {
-    html += `<p class="err">Errors:</p><ul>${result.errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+    html += `<p class="err">Errors:</p><ul>${result.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`;
   }
 
   if (result.warnings.length) {
     const show = result.warnings.slice(0, 12);
-    html += `<p class="warn">Warnings (${result.warnings.length}):</p><ul>${show.map(w => `<li>${w}</li>`).join('')}</ul>`;
+    html += `<p class="warn">Warnings (${result.warnings.length}):</p><ul>${show.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`;
     if (result.warnings.length > 12) {
       html += `<p class="warn">…and ${result.warnings.length - 12} more.</p>`;
     }

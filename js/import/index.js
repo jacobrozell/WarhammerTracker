@@ -13,7 +13,7 @@ function applyImport(result, domain) {
   return true;
 }
 
-/** @param {import('../data/csv.js').ImportResult} result */
+/** @param {import('../data/csv.js').ImportResult} result @param {'armies'|'paints'} domain */
 function resultTitle(result, domain) {
   if (!result.ok) return 'Import failed';
   return domain === 'armies' ? 'Armies imported' : 'Paints imported';
@@ -38,13 +38,6 @@ export function handleImportFile(file, expected) {
     ok: false, errors: ['Could not read file'], warnings: [], stats: {},
   });
   fr.readAsText(file);
-}
-
-/** @param {'armies'|'paints'} kind */
-export function downloadTemplate(kind) {
-  const schema = kind === 'armies' ? ARMY_SCHEMA : PAINT_SCHEMA;
-  downloadText(schema.template, schema.filename);
-  toast('Template downloaded');
 }
 
 export function exportArmiesCSV() {

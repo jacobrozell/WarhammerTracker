@@ -5,7 +5,9 @@ import { handleImportFile } from '../import/index.js';
  * @param {'armies'|'paints'} expected
  */
 export function wireDropZone(el, expected) {
-  if (!el) return;
+  if (!el || el.dataset.dropWired) return;
+  el.dataset.dropWired = '1';
+
   const zone = el.querySelector('.drop-zone');
   if (!zone) return;
 

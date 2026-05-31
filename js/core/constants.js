@@ -7,6 +7,7 @@
 export const APP_VERSION = 3;
 export const STORAGE_KEY = 'musterRoll.v3';
 export const LEGACY_STORAGE_KEY = 'musterRoll.v2';
+export const LEGACY_THEME_KEY = 'musterRoll.theme';
 
 /** @type {PipelineStage[]} */
 export const DEFAULT_PIPELINE = [

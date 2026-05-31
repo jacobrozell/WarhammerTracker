@@ -1,13 +1,14 @@
 import { load, subscribe } from './core/store.js';
-import { renderAll } from './render/index.js';
+import { renderAll, renderArmyDomain } from './render/index.js';
+import { renderPaints } from './render/paints.js';
 import { bindArmySearch, bindArmyExpandCollapse } from './render/armies.js';
 import { bindPaintSearch } from './render/paints.js';
 import {
   handleImportFile,
-  downloadTemplate,
   exportArmiesCSV,
   exportPaintsCSV,
 } from './import/index.js';
+import { downloadTemplate } from './data/export.js';
 import { initModal } from './ui/modal.js';
 import { initTheme, initThemeToggle } from './ui/theme.js';
 import { toast } from './ui/toast.js';
@@ -29,8 +30,14 @@ function bindImportExport() {
 
   document.getElementById('importBtn')?.addEventListener('click', () => fiA?.click());
   document.getElementById('importBtn2')?.addEventListener('click', () => fiP?.click());
-  document.getElementById('templateArmies')?.addEventListener('click', () => downloadTemplate('armies'));
-  document.getElementById('templatePaints')?.addEventListener('click', () => downloadTemplate('paints'));
+  document.getElementById('templateArmies')?.addEventListener('click', () => {
+    downloadTemplate('armies');
+    toast('Template downloaded');
+  });
+  document.getElementById('templatePaints')?.addEventListener('click', () => {
+    downloadTemplate('paints');
+    toast('Template downloaded');
+  });
   document.getElementById('exportArmies')?.addEventListener('click', exportArmiesCSV);
   document.getElementById('exportPaints')?.addEventListener('click', exportPaintsCSV);
 
@@ -57,9 +64,20 @@ function init() {
   bindArmyExpandCollapse();
   bindPaintSearch();
 
-  subscribe(reason => {
-    renderAll();
-    if (reason === 'save') toast('Saved locally');
+  subscribe((reason, detail) => {
+    if (reason === 'collection' || reason === 'settings') renderArmyDomain();
+    else if (reason === 'paints') renderPaints();
+    else if (reason === 'all') renderAll();
+
+    if (reason === 'collection' || reason === 'paints' || reason === 'settings' || reason === 'all') {
+      toast('Saved locally');
+    }
+    if (reason === 'save-error' && detail && typeof detail === 'object' && 'message' in detail) {
+      toast(/** @type {{ message: string }} */ (detail).message);
+    }
+    if (reason === 'load-error' && detail && typeof detail === 'object' && 'message' in detail) {
+      toast(/** @type {{ message: string }} */ (detail).message);
+    }
   });
 
   renderAll();

@@ -1,6 +1,8 @@
-import { getState, save } from '../core/store.js';
+import { getState } from '../core/store.js';
+import { escapeHtml, escapeAttr, safeColor } from '../core/dom.js';
 import { wireDropZone } from '../ui/dropzone.js';
-import { downloadTemplate } from '../import/index.js';
+import { downloadTemplate } from '../data/export.js';
+import { toast } from '../ui/toast.js';
 
 /** @type {string} */
 let paintFilter = 'All';
@@ -12,11 +14,11 @@ export function renderPaints() {
   const types = ['All', ...new Set(paints.map(p => p.type).filter(Boolean))];
 
   document.getElementById('paintFilters').innerHTML = types.map(t =>
-    `<button class="chip ${paintFilter === t ? 'on' : ''}" data-t="${t}">${t}</button>`
+    `<button class="chip ${paintFilter === t ? 'on' : ''}" data-t="${escapeAttr(t)}">${escapeHtml(t)}</button>`
   ).join('');
 
   document.querySelectorAll('#paintFilters .chip').forEach(c => {
-    c.onclick = () => { paintFilter = c.dataset.t; renderPaints(); };
+    c.onclick = () => { paintFilter = c.dataset.t || 'All'; renderPaints(); };
   });
 
   const host = document.getElementById('paints');
@@ -34,7 +36,10 @@ export function renderPaints() {
     document.getElementById('emptyImportPaints')?.addEventListener('click', () => {
       document.getElementById('fileInputPaints')?.click();
     });
-    document.getElementById('emptyTemplatePaints')?.addEventListener('click', () => downloadTemplate('paints'));
+    document.getElementById('emptyTemplatePaints')?.addEventListener('click', () => {
+      downloadTemplate('paints');
+      toast('Template downloaded');
+    });
     wireDropZone(document.getElementById('paintsDrop'), 'paints');
     document.getElementById('paintStats').innerHTML = '';
     return;
@@ -48,8 +53,8 @@ export function renderPaints() {
 
   host.innerHTML = rows.map(p =>
     `<div class="paint">
-      <div class="swatch" style="background:${p.swatch}"></div>
-      <div><div class="pn">${p.name}</div><div class="pt">${p.type}${p.brand ? ` · ${p.brand}` : ''}</div></div>
+      <div class="swatch" style="background:${safeColor(p.swatch)}"></div>
+      <div><div class="pn">${escapeHtml(p.name)}</div><div class="pt">${escapeHtml(p.type)}${p.brand ? ` · ${escapeHtml(p.brand)}` : ''}</div></div>
       ${p.qty > 1 ? `<div class="qbadge">×${p.qty}</div>` : ''}
     </div>`
   ).join('');
@@ -60,13 +65,13 @@ export function renderPaints() {
     [total, 'Total Pots', 1],
     [new Set(paints.map(p => p.type)).size, 'Types'],
   ].map(t =>
-    `<div class="tile ${t[2] ? 'accent' : ''}"><div class="v">${t[0]}</div><div class="l">${t[1]}</div></div>`
+    `<div class="tile ${t[2] ? 'accent' : ''}"><div class="v">${t[0]}</div><div class="l">${escapeHtml(t[1])}</div></div>`
   ).join('');
 }
 
 export function bindPaintSearch() {
   document.getElementById('paintSearch')?.addEventListener('input', e => {
-    paintSearch = e.target.value;
+    paintSearch = /** @type {HTMLInputElement} */ (e.target).value;
     renderPaints();
   });
 }
