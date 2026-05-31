@@ -1,7 +1,7 @@
 /** @typedef {{ key: string, hex: string }} PipelineStage */
-/** @typedef {{ army: string, game: string, faction: string, crest: string, color: string, units: object[] }} Army */
-/** @typedef {{ name: string, type: string, swatch: string, qty: number, brand: string, source: string, notes: string }} Paint */
-/** @typedef {{ theme: 'dark'|'light'|'system', pipeline: PipelineStage[]|null, factionPresets: Record<string,[string,string]>|null }} Settings */
+/** @typedef {{ army: string, game: string, faction: string, crest: string, color: string, crestOverride?: string, colorOverride?: string, pipeline?: PipelineStage[]|null, units: object[] }} Army */
+/** @typedef {{ name: string, type: string, swatch: string, qty: number, brand: string, source: string, notes: string, low?: boolean }} Paint */
+/** @typedef {{ theme: 'dark'|'light'|'system', pipeline: PipelineStage[]|null, factionPresets: Record<string,[string,string]>|null, collapsedArmies?: string[], armySort?: string, unitSort?: string, gameFilter?: string, factionFilter?: string, stateFilter?: string, sourceFilter?: string, tagFilter?: string, spearheadOnly?: boolean, quickView?: string, lastBackupAt?: string, seenStorageBanner?: boolean }} Settings */
 /** @typedef {{ version: number, collection: Army[], paints: Paint[], settings: Settings }} AppState */
 
 export const APP_VERSION = 3;
@@ -22,14 +22,15 @@ export const DEFAULT_PIPELINE = [
   { key: 'Done', hex: '#22c55e' },
 ];
 
-/** Faction name → [crest abbreviation, accent colour] */
-export const DEFAULT_FACTION_PRESETS = {
-  'Grey Knights': ['GK', '#aeb6bd'],
-  Ultramarines: ['UM', '#1c4fa0'],
-  Skaven: ['SK', '#8a9a4a'],
-  'Stormcast Eternals': ['SC', '#d4af37'],
-  Terrain: ['TR', '#8a8278'],
-};
+export {
+  DEFAULT_FACTION_PRESETS,
+  CANONICAL_FACTIONS,
+  SUPPORTED_GAMES,
+  mergeFactionPresets,
+  resolveFactionPreset,
+  getArmyPresentation,
+  isFallbackPreset,
+} from '../data/faction-presets.js';
 
 /** Paint type → default swatch colour */
 export const DEFAULT_PAINT_TYPES = {

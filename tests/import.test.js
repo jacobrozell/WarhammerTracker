@@ -28,6 +28,11 @@ describe('schema detection', () => {
     expect(detectMusterPaints(rows)).toBe(true);
     expect(detectMusterArmies(rows)).toBe(false);
   });
+
+  it('detects minimal paints CSV with Name only', () => {
+    expect(detectMusterPaints([['Name']])).toBe(true);
+    expect(detectMusterPaints([['Name'], ['Macragge Blue']])).toBe(true);
+  });
 });
 
 describe('importMusterArmies', () => {
@@ -77,6 +82,17 @@ describe('importMusterArmies', () => {
     expect(result.errors).toContain('No unit rows found');
   });
 
+  it('imports optional Crest and Color columns as overrides', () => {
+    const rows = [
+      ['Game', 'Faction', 'Army', 'Unit', 'Crest', 'Color'],
+      ['40k', 'Ultramarines', 'Custom', 'Squad', 'XX', '#ff00ff'],
+    ];
+    const result = importMusterArmies(rows, ctx);
+    expect(result.ok).toBe(true);
+    expect(result.data[0].crestOverride).toBe('XX');
+    expect(result.data[0].colorOverride).toBe('#ff00ff');
+  });
+
   it('warns on conflicting game for same army', () => {
     const rows = [
       ['Game', 'Faction', 'Army', 'Unit'],
@@ -111,6 +127,25 @@ describe('importMusterPaints', () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('No paint rows found');
   });
+
+  it('imports minimal Name-only CSV', () => {
+    const result = importMusterPaints([['Name'], ['Retributor Armour']]);
+    expect(result.ok).toBe(true);
+    expect(result.data[0].name).toBe('Retributor Armour');
+  });
+
+  it('merges duplicate paint names on import', () => {
+    const rows = [
+      ['Name', 'Type', 'Quantity'],
+      ['Same Blue', 'Base', '1'],
+      ['same blue', 'Base', '2'],
+    ];
+    const result = importMusterPaints(rows);
+    expect(result.ok).toBe(true);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].qty).toBe(3);
+    expect(result.warnings.some(w => w.includes('Merged duplicate'))).toBe(true);
+  });
 });
 
 describe('import registry', () => {
@@ -120,11 +155,14 @@ describe('import registry', () => {
     expect(detectImporter(armyRows, 'paints')).toBeNull();
   });
 
-  it('rejects wrong domain via runImport', () => {
-    const paintRows = [['Name', 'Type', 'Quantity']];
-    const result = runImport(paintRows, {}, 'armies');
+  it('rejects armies CSV when paints import is expected', () => {
+    const armyRows = [
+      ['Game', 'Faction', 'Army', 'Unit'],
+      ['40k', 'Ultramarines', 'My Chapter', 'Intercessors'],
+    ];
+    const result = runImport(armyRows, {}, 'paints');
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toContain('paints file');
+    expect(result.errors[0]).toContain('Unrecognised paints CSV');
   });
 
   it('reports unrecognised format', () => {

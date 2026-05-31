@@ -48,6 +48,12 @@ describe('normalizeQty', () => {
   it('respects custom default', () => {
     expect(normalizeQty('', 0).qty).toBe(0);
   });
+
+  it('rejects zero when default is positive', () => {
+    const r = normalizeQty('0');
+    expect(r.qty).toBe(1);
+    expect(r.warn).toContain('cannot be 0');
+  });
 });
 
 describe('normalizeBool', () => {

@@ -3,9 +3,9 @@ export const ARMY_SCHEMA = {
   label: 'Muster Roll Armies',
   filename: 'warhammer_armies.csv',
   required: ['game', 'faction', 'army', 'unit'],
-  optional: ['qty', 'source', 'state', 'spearhead', 'notes'],
-  exportHeaders: ['Game', 'Faction', 'Army', 'Unit', 'Qty', 'Source', 'State', 'Spearhead', 'Notes'],
-  template: 'Game,Faction,Army,Unit,Qty,Source,State,Spearhead,Notes\n40k,Space Marines,My Chapter,Intercessors (5),1,Starter Set,Unassembled,,\n',
+  optional: ['qty', 'source', 'state', 'spearhead', 'notes', 'crest', 'color'],
+  exportHeaders: ['Game', 'Faction', 'Army', 'Unit', 'Qty', 'Source', 'State', 'Spearhead', 'Notes', 'Crest', 'Color'],
+  template: 'Game,Faction,Army,Unit,Qty,Source,State,Spearhead,Notes,Crest,Color\n40k,Space Marines,My Chapter,Intercessors (5),1,Starter Set,Unassembled,,,SM,#1c4fa0\n',
 };
 
 export const PAINT_SCHEMA = {
@@ -27,5 +27,5 @@ export function detectMusterArmies(rows) {
 /** @param {string[][]} rows */
 export function detectMusterPaints(rows) {
   const head = (rows[0] || []).map(h => String(h).trim().toLowerCase());
-  return head.includes('name') && (head.includes('quantity') || head.includes('type'));
+  return head.includes('name');
 }

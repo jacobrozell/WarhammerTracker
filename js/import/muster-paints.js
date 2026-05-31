@@ -36,19 +36,32 @@ export function importMusterPaints(rows) {
   if (!data.length) errors.push('No paint rows found');
   if (errors.length) return { ...emptyResult(), errors, warnings };
 
+  /** @type {Map<string, import('../core/constants.js').Paint>} */
+  const merged = new Map();
+  data.forEach(p => {
+    const k = p.name.toLowerCase();
+    const prev = merged.get(k);
+    if (prev) {
+      prev.qty = (prev.qty || 1) + (p.qty || 1);
+      if (p.notes && !prev.notes) prev.notes = p.notes;
+      warnings.push(`Merged duplicate paint "${p.name}"`);
+    } else merged.set(k, p);
+  });
+  const out = [...merged.values()];
+
   return {
     ok: true,
     errors: [],
     warnings,
-    stats: { paints: data.length },
-    data,
+    stats: { paints: out.length },
+    data: out,
   };
 }
 
-export const musterPaintsImporter = {
+export const musterPaintsImporter = /** @type {import('./registry.js').Importer} */ ({
   id: 'muster-paints',
   label: 'Muster Roll Paints CSV',
   domain: 'paints',
   detect: detectMusterPaints,
   import: (rows) => importMusterPaints(rows),
-};
+});

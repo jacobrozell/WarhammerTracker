@@ -1,6 +1,33 @@
+/** @param {string} name */
+export function fileImportHint(name) {
+  const lower = (name || '').toLowerCase();
+  if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+    return 'Excel (.xlsx) files are not supported — open in Excel and Save As CSV (UTF-8).';
+  }
+  return null;
+}
+
+/** @param {string} text */
+export function detectDelimiter(text) {
+  const line = text.split(/\r?\n/)[0] || '';
+  const tabs = (line.match(/\t/g) || []).length;
+  const semis = (line.match(/;/g) || []).length;
+  const commas = (line.match(/,/g) || []).length;
+  if (tabs > commas && tabs > semis) return '\t';
+  if (semis > commas) return ';';
+  return ',';
+}
+
 /** @param {string} text */
 export function parseCSV(text) {
   text = text.replace(/^\uFEFF/, '');
+  const delim = detectDelimiter(text);
+  if (delim !== ',') {
+    text = text.split(/\r?\n/).map(line => {
+      const parts = line.split(delim);
+      return parts.map(p => (/[",\n]/.test(p) ? `"${p.replace(/"/g, '""')}"` : p)).join(',');
+    }).join('\n');
+  }
   const rows = [];
   let row = [];
   let cur = '';
@@ -25,8 +52,8 @@ export function parseCSV(text) {
 
 /** @param {unknown} c */
 export function escapeCSV(c) {
-  c = String(c == null ? '' : c);
-  return /[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c;
+  const s = String(c == null ? '' : c);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 /** @param {string[][]} rows */
@@ -38,11 +65,14 @@ export function serializeCSV(rows) {
 export function downloadText(text, filename, mime = 'text/csv;charset=utf-8') {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /** @param {string[][]} rows @param {string[]} required */
@@ -62,8 +92,11 @@ export function normalizeQty(raw, def = 1) {
   const s = String(raw ?? '').trim();
   if (!s) return { qty: def };
   const n = +s;
-  if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
     return { qty: def, warn: `Invalid Qty "${raw}" — using ${def}` };
+  }
+  if (n === 0 && def > 0) {
+    return { qty: def, warn: `Qty cannot be 0 — using ${def}` };
   }
   return { qty: n };
 }
@@ -77,6 +110,6 @@ export function normalizeBool(raw) {
   return { val: undefined, warn: `Unrecognised boolean value "${raw}" — ignored` };
 }
 
-/** @typedef {{ ok: boolean, errors: string[], warnings: string[], stats: Record<string, number>, data?: unknown }} ImportResult */
+/** @typedef {{ ok: boolean, errors: string[], warnings: string[], stats: Record<string, number>, data?: unknown, replaced?: string }} ImportResult */
 
 export const emptyResult = () => ({ ok: false, errors: [], warnings: [], stats: {} });

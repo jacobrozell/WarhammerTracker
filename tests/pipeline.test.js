@@ -3,6 +3,7 @@ import {
   resolvePipeline,
   stateProgress,
   progressSegments,
+  collectionProgress,
   buildStateHexMap,
   buildPipelineIndex,
   normalizeState,
@@ -38,18 +39,30 @@ describe('stateProgress', () => {
 });
 
 describe('progressSegments', () => {
-  it('builds percentage segments in pipeline order', () => {
+  it('weights segments by model count', () => {
     const pipeline = resolvePipeline(null);
     const units = [
-      { state: pipeline[0].key },
-      { state: pipeline[0].key },
-      { state: pipeline[pipeline.length - 1].key },
+      { state: pipeline[0].key, unit: 'A', qty: 1 },
+      { state: pipeline[0].key, unit: 'B (5)', qty: 1 },
+      { state: pipeline[pipeline.length - 1].key, unit: 'C', qty: 1 },
     ];
     const seg = progressSegments(units, pipeline);
     expect(seg).toHaveLength(2);
-    expect(seg[0].pct).toBeCloseTo(66.67, 1);
-    expect(seg[1].pct).toBeCloseTo(33.33, 1);
-    expect(seg[0].hex).toBe(pipeline[0].hex);
+    expect(seg[0].pct).toBeCloseTo(85.71, 1);
+    expect(seg[1].pct).toBeCloseTo(14.29, 1);
+  });
+});
+
+describe('collectionProgress', () => {
+  it('weights progress by models', () => {
+    const pipeline = resolvePipeline(null);
+    const last = pipeline[pipeline.length - 1].key;
+    const units = [
+      { state: pipeline[0].key, unit: 'Big (10)', qty: 1 },
+      { state: last, unit: 'Done', qty: 1 },
+    ];
+    expect(collectionProgress(units, pipeline)).toBeGreaterThan(0.08);
+    expect(collectionProgress(units, pipeline)).toBeLessThan(0.2);
   });
 });
 

@@ -1,7 +1,14 @@
 import { headerMap, normalizeQty, normalizeBool, emptyResult } from '../data/csv.js';
-import { DEFAULT_FACTION_PRESETS } from '../core/constants.js';
+import { resolveFactionPreset, isFallbackPreset } from '../data/faction-presets.js';
+import { safeColor } from '../core/dom.js';
 import { normalizeState } from '../core/pipeline.js';
 import { detectMusterArmies } from '../data/schema.js';
+
+/** @param {string[][]} rows @param {(n: string) => number} col @param {string} name */
+function optionalCol(rows, col, name) {
+  const i = col(name);
+  return i >= 0 ? i : -1;
+}
 
 /**
  * @param {string[][]} rows
@@ -12,11 +19,12 @@ export function importMusterArmies(rows, ctx) {
   if (!hm.ok) return { ...emptyResult(), errors: [hm.error] };
 
   const { col } = hm;
-  const presets = ctx.factionPresets || DEFAULT_FACTION_PRESETS;
+  const crestCol = optionalCol(rows, col, 'crest');
+  const colorCol = optionalCol(rows, col, 'color');
   const errors = [];
   const warnings = [];
   const order = [];
-  /** @type {Record<string, import('../core/constants.js').Army>} */
+  /** @type {Record<string, { army: string, game: string, faction: string, units: object[], _csvCrest?: string, _csvColor?: string }>} */
   const map = {};
 
   rows.slice(1).forEach((r, i) => {
@@ -35,6 +43,14 @@ export function importMusterArmies(rows, ctx) {
     if (!map[army]) {
       map[army] = { army, game, faction, units: [] };
       order.push(army);
+      if (crestCol >= 0) {
+        const c = (r[crestCol] || '').trim();
+        if (c) map[army]._csvCrest = c.slice(0, 8);
+      }
+      if (colorCol >= 0) {
+        const c = (r[colorCol] || '').trim();
+        if (c) map[army]._csvColor = c;
+      }
     } else {
       if (game && map[army].game && map[army].game !== game) {
         warnings.push(`Row ${line}: Game "${game}" differs from first row for army "${army}"`);
@@ -70,10 +86,36 @@ export function importMusterArmies(rows, ctx) {
   if (!order.length) errors.push('No unit rows found');
   if (errors.length) return { ...emptyResult(), errors, warnings };
 
+  const warnedFactions = new Set();
   const data = order.map(a => {
     const o = map[a];
-    const f = presets[o.faction] || [o.faction.slice(0, 2).toUpperCase() || '??', '#888'];
-    return { ...o, crest: f[0], color: f[1] };
+    const f = resolveFactionPreset(o.faction, { game: o.game, presets: ctx.factionPresets });
+    const key = `${o.game || ''}\0${o.faction || ''}`;
+    if (o.faction && isFallbackPreset(f) && !warnedFactions.has(key)) {
+      warnedFactions.add(key);
+      const scope = o.game ? ` for game "${o.game}"` : '';
+      warnings.push(`Unknown faction "${o.faction}"${scope} — using default grey crest`);
+    }
+
+    const crest = o._csvCrest || f[0];
+    const color = o._csvColor ? safeColor(o._csvColor) : f[1];
+    if (o._csvColor && !/^#[0-9a-fA-F]{3,8}$/i.test(o._csvColor.trim())) {
+      warnings.push(`Army "${o.army}": invalid Color "${o._csvColor}" — using preset`);
+    }
+
+    /** @type {import('../core/constants.js').Army} */
+    const army = {
+      army: o.army,
+      game: o.game,
+      faction: o.faction,
+      crest,
+      color,
+      units: o.units,
+    };
+    if (o._csvCrest) army.crestOverride = o._csvCrest;
+    if (o._csvColor) army.colorOverride = safeColor(o._csvColor);
+
+    return army;
   });
 
   return {
@@ -85,10 +127,10 @@ export function importMusterArmies(rows, ctx) {
   };
 }
 
-export const musterArmiesImporter = {
+export const musterArmiesImporter = /** @type {import('./registry.js').Importer} */ ({
   id: 'muster-armies',
   label: 'Muster Roll Armies CSV',
   domain: 'armies',
   detect: detectMusterArmies,
   import: importMusterArmies,
-};
+});

@@ -47,13 +47,30 @@ export function stateProgress(state, pipeline) {
   return (idx[state] ?? 0) / max;
 }
 
+/** Weighted progress for one unit (0–1). */
+export function unitWeightedProgress(unit, pipeline) {
+  return stateProgress(unit.state, pipeline) * modelCount(unit);
+}
+
+/** @param {object[]} units @param {import('./constants.js').PipelineStage[]} pipeline */
+export function collectionProgress(units, pipeline) {
+  const total = units.reduce((s, u) => s + modelCount(u), 0);
+  if (!total) return 0;
+  return units.reduce((s, u) => s + unitWeightedProgress(u, pipeline), 0) / total;
+}
+
 /** @param {object[]} units @param {import('./constants.js').PipelineStage[]} pipeline */
 export function progressSegments(units, pipeline) {
+  const totalModels = units.reduce((s, u) => s + modelCount(u), 0);
+  if (!totalModels) return [];
   const counts = {};
-  units.forEach(u => { counts[u.state] = (counts[u.state] || 0) + 1; });
+  units.forEach(u => {
+    const w = modelCount(u);
+    counts[u.state] = (counts[u.state] || 0) + w;
+  });
   return pipeline
     .filter(p => counts[p.key])
-    .map(p => ({ hex: p.hex, pct: (counts[p.key] / units.length) * 100 }));
+    .map(p => ({ key: p.key, hex: p.hex, pct: (counts[p.key] / totalModels) * 100 }));
 }
 
 /** @param {object} unit */
@@ -64,6 +81,12 @@ export function modelCount(unit) {
     if (n) return n.reduce((a, b) => a + +b, 0) * (unit.qty || 1);
   }
   return unit.qty || 1;
+}
+
+/** @param {import('./constants.js').Army|null|undefined} [army] @param {import('./constants.js').PipelineStage[]|null|undefined} [custom] */
+export function getPipelineForArmy(army, custom) {
+  const src = army?.pipeline ?? custom;
+  return resolvePipeline(src);
 }
 
 /**

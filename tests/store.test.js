@@ -119,12 +119,12 @@ describe('store', () => {
     expect(storage.getItem(STORAGE_KEY)).toBeTruthy();
   });
 
-  it('migrates legacy theme key into settings', async () => {
+  it('migrates legacy theme key when settings theme is unset', async () => {
     storage.setItem(STORAGE_KEY, JSON.stringify({
       version: APP_VERSION,
       collection: [],
       paints: [],
-      settings: DEFAULT_SETTINGS,
+      settings: { theme: '', pipeline: null, factionPresets: null },
     }));
     storage.setItem(LEGACY_THEME_KEY, 'light');
 
@@ -186,5 +186,82 @@ describe('store', () => {
 
     expect(store.load()).toBe(false);
     expect(errors).toContain('load-error');
+  });
+
+  it('moveUnit transfers between armies', async () => {
+    const store = await freshStore();
+    store.setCollection([
+      {
+        army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+        units: [{ unit: 'Unit', qty: 1, source: '', state: 'Unassembled' }],
+      },
+      {
+        army: 'B', game: '40k', faction: 'X', crest: 'B', color: '#888',
+        units: [],
+      },
+    ]);
+    expect(store.moveUnit('A', 0, 'B')).toBe(true);
+    expect(store.getState().collection[0].units).toHaveLength(0);
+    expect(store.getState().collection[1].units[0].unit).toBe('Unit');
+  });
+
+  it('mergeArmyDuplicates combines matching rows', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [
+        { unit: 'Clanrats (5)', qty: 1, source: 'Box', state: 'Based' },
+        { unit: 'Clanrats (5)', qty: 2, source: 'Box', state: 'Based' },
+      ],
+    }]);
+    expect(store.mergeArmyDuplicates('A')).toBe(1);
+    expect(store.getState().collection[0].units).toHaveLength(1);
+    expect(store.getState().collection[0].units[0].qty).toBe(3);
+  });
+
+  it('paint CRUD operations', async () => {
+    const store = await freshStore();
+    expect(store.addPaint({ name: 'Red', type: 'Base', swatch: '#f00', qty: 1, brand: '', source: '', notes: '' })).toBe(true);
+    expect(store.addPaint({ name: 'Red', type: 'Base', swatch: '#f00', qty: 1, brand: '', source: '', notes: '' })).toBe(false);
+    expect(store.updatePaint('Red', { qty: 2 })).toBe(true);
+    expect(store.getState().paints[0].qty).toBe(2);
+    expect(store.removePaint('Red')).toBe(true);
+    expect(store.getState().paints).toHaveLength(0);
+  });
+
+  it('patchSettings persists filter prefs silently', async () => {
+    const store = await freshStore();
+    const reasons = [];
+    store.subscribe((r, d) => reasons.push({ r, d }));
+    store.patchSettings({ armySort: 'name', gameFilter: 'AoS' }, { silent: true });
+    expect(store.getState().settings.armySort).toBe('name');
+    expect(reasons[reasons.length - 1]?.d).toEqual({ silent: true });
+  });
+
+  it('undo restores unit state changes', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    store.updateUnit('A', 0, { state: 'Primed' });
+    expect(store.getState().collection[0].units[0].state).toBe('Primed');
+    expect(store.undoLast()).toBe(true);
+    expect(store.getState().collection[0].units[0].state).toBe('Unassembled');
+  });
+
+  it('setArmyPipeline and getArmyPipeline', async () => {
+    const store = await freshStore();
+    const army = { army: 'T', game: '40k', faction: 'X', crest: 'T', color: '#888', units: [] };
+    store.setCollection([army]);
+    const custom = [{ key: 'Built', hex: '#fff' }, { key: 'Done', hex: '#0f0' }];
+    expect(store.setArmyPipeline('T', custom)).toBe(true);
+    expect(store.getArmyPipeline(store.getState().collection[0])).toHaveLength(2);
+  });
+
+  it('recordBackup sets lastBackupAt', async () => {
+    const store = await freshStore();
+    store.recordBackup();
+    expect(store.getState().settings.lastBackupAt).toBeTruthy();
   });
 });
