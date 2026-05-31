@@ -3,9 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p jsconfig.json",
+    "dev": "serve ."
   },
   "devDependencies": {
+    "@types/node": "^22.15.21",
+    "serve": "^14.2.4",
+    "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }
 }
