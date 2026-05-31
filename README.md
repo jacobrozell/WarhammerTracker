@@ -5,7 +5,8 @@ A browser-based Warhammer hobby tracker — armies, painting pipeline, and paint
 **Live locally:** open `index.html` in a browser, or run a static server:
 
 ```bash
-npx serve .
+npm run dev
+# or: npx serve .
 # or: python -m http.server 8080
 ```
 
@@ -18,7 +19,7 @@ npx serve .
 3. **Import Paints CSV** — use `warhammer_paint_inventory.csv` or download the template
 4. Edit states inline; changes save automatically
 
-See [docs/IMPORTING_CSV.md](docs/IMPORTING_CSV.md) and [docs/SCHEMA.md](docs/SCHEMA.md).
+See [docs/IMPORTING_CSV.md](docs/IMPORTING_CSV.md), [docs/SCHEMA.md](docs/SCHEMA.md), and [docs/FACTION_PRESETS.md](docs/FACTION_PRESETS.md) for faction colours and supported game tokens.
 
 ## Publish (GitHub Pages)
 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importing CSV — The Muster Roll</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/app.css">
+  <style>
+    .doc-page { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .doc-page h1 { font-family: Cinzel, serif; font-size: 2rem; margin-bottom: 0.5rem; }
+    .doc-page h2 { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 1rem; color: var(--gold); margin: 2rem 0 0.75rem; }
+    .doc-page p, .doc-page li { line-height: 1.6; color: var(--ink-dim); margin-bottom: 0.75rem; }
+    .doc-page ul { padding-left: 1.25rem; }
+    .doc-page code { background: var(--surface); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+    .doc-page table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+    .doc-page th, .doc-page td { border: 1px solid var(--line); padding: 0.5rem 0.75rem; text-align: left; }
+    .doc-page th { color: var(--ink); }
+    .doc-back { display: inline-block; margin-bottom: 1.5rem; color: var(--gold); text-decoration: none; }
+    .doc-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="doc-page">
+    <a class="doc-back" href="../index.html">← Back to The Muster Roll</a>
+    <h1>Importing CSV</h1>
+    <p>The Muster Roll uses <strong>two CSV files</strong> — one for armies, one for paints. They are imported separately.</p>
+
+    <h2>First-time setup</h2>
+    <ol>
+      <li>Open the app</li>
+      <li>On the <strong>Armies</strong> tab, click <strong>Army Template</strong> or use the sample <code>warhammer_armies.csv</code> in the repo</li>
+      <li>Fill in your collection (spreadsheet or text editor)</li>
+      <li>Click <strong>Import Armies CSV</strong> and select your file</li>
+      <li>Repeat on the <strong>Paints</strong> tab with <code>warhammer_paint_inventory.csv</code></li>
+    </ol>
+    <p>You can also drag a CSV onto the page or the empty-state drop zone.</p>
+
+    <h2>Column reference</h2>
+    <p>Full schema: <a href="SCHEMA.md">SCHEMA.md</a></p>
+    <ul>
+      <li><strong>Armies</strong> (required): <code>Game</code>, <code>Faction</code>, <code>Army</code>, <code>Unit</code></li>
+      <li><strong>Paints</strong> (required): <code>Name</code></li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul>
+      <li>Headers are case-insensitive</li>
+      <li>UTF-8 with BOM is supported; TSV and semicolon files are auto-detected</li>
+      <li>Fields with commas must be quoted: <code>"Notes, with comma"</code></li>
+      <li>Import <strong>replaces</strong> the current tab's data unless you use <strong>Append</strong></li>
+      <li>Unknown painting states fall back to the first pipeline stage with a warning</li>
+    </ul>
+
+    <h2>Export / backup</h2>
+    <ul>
+      <li><strong>Export Armies</strong> / <strong>Export Paints</strong> — CSV backup compatible with re-import</li>
+      <li><strong>Full backup</strong> — JSON file including settings and pipeline</li>
+    </ul>
+
+    <h2>Troubleshooting</h2>
+    <table>
+      <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>"Unrecognised CSV"</td><td>Use the correct import button (armies vs paints)</td></tr>
+        <tr><td>"Missing required columns"</td><td>Compare headers to <a href="SCHEMA.md">SCHEMA.md</a></td></tr>
+        <tr><td>Data gone after refresh</td><td>Data is per-browser; avoid private browsing without a backup</td></tr>
+        <tr><td>Excel file rejected</td><td>Save As CSV (UTF-8) from Excel</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

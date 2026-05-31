@@ -12,10 +12,12 @@ css/
 js/
   app.js                Bootstrap, event wiring
   core/
-    constants.js        Defaults: pipeline, factions, paint types
+    constants.js        Defaults: pipeline, paint types; re-exports factions
     pipeline.js         State normalization, progress math, custom pipeline hook
     store.js            Versioned localStorage, migrations, JSON backup
   data/
+    factions/           defs-*.js, contrast audit, resolve/merge (see docs/FACTION_PRESETS.md)
+    faction-presets.js  Re-export shim for older import paths
     csv.js              Parse / serialize / validators
     schema.js           Column definitions, format detection helpers
   import/
@@ -34,6 +36,7 @@ js/
     dropzone.js         Drag-and-drop CSV
 docs/
   SCHEMA.md             CSV column reference
+  FACTION_PRESETS.md    Faction crest/colour architecture
   IMPORTING_CSV.md      User import guide
 samples/                (optional) example CSVs at repo root
 ```
@@ -67,6 +70,8 @@ flowchart LR
 ```
 
 - `pipeline: null` → use `DEFAULT_PIPELINE` from `constants.js`
+- `factionPresets: null` → use built-in catalogue; non-null values are **merged as overrides** (see [FACTION_PRESETS.md](FACTION_PRESETS.md))
+- Army objects may include optional `crestOverride` / `colorOverride`; UI resolves live colours via `getArmyPresentation()`
 - Legacy `musterRoll.v2` (`{ c, p }`) migrates automatically on first load
 
 ## Extension points (mapped to future ideas)

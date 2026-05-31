@@ -14,8 +14,8 @@ One row per **unit entry**. Multiple rows with the same `Army` value are grouped
 
 | Column     | Required | Type    | Description |
 |------------|----------|---------|-------------|
-| `Game`     | yes      | string  | Game system, e.g. `40k`, `AoS`, `HH`, `TOW`. Free text — used for filtering. |
-| `Faction`  | yes      | string  | Faction name, e.g. `Grey Knights`, `Skaven`, `Terrain`. Drives crest colour when known. |
+| `Game`     | yes      | string  | Game system — use a supported token when possible: `40k`, `AoS`, `TOW`, `30k`, `Necromunda`, `Warcry`, `Blood Bowl`, `MESBG`. Used with `Faction` for preset lookup. |
+| `Faction`  | yes      | string  | Faction name, e.g. `Grey Knights`, `Skaven`, `Blood Bowl: Skaven`. Matched against [faction presets](FACTION_PRESETS.md) (`game` + `faction`). Unknown pairs warn on import. |
 | `Army`     | yes      | string  | Your list name (display label). Rows sharing this value form one army block. |
 | `Unit`     | yes      | string  | Unit or model name, e.g. `Strike Squad (5)`, `Rat Ogors`. Parentheses can encode model counts for stats. |
 | `Qty`      | no       | integer | Number of this entry (default `1`). Multiplies model count when `Unit` contains `(N)`. |
@@ -23,6 +23,8 @@ One row per **unit entry**. Multiple rows with the same `Army` value are grouped
 | `State`    | no       | enum    | Painting/build pipeline stage (default `Unassembled`). See [Pipeline states](#pipeline-states). |
 | `Spearhead`| no       | boolean | `Yes` / `No` (also `true`/`false`, `1`/`0`). Omit for games that do not use spearhead lists (e.g. 40k). |
 | `Notes`    | no       | string  | Free-text notes shown inline in the tracker. |
+| `Crest`    | no       | string  | Custom crest abbreviation (≤8 chars) for this army; sets an override on import. |
+| `Color`    | no       | string  | Custom accent hex (e.g. `#1c4fa0`) for this army; sets an override on import. |
 
 ### Example
 
@@ -37,7 +39,7 @@ AoS,Terrain,Sand & Bone,Shyish Terrain Piece,1,Sand & Bone Gaming Pack,Unassembl
 
 - Armies are built in **first-seen order** of the `Army` column.
 - `Game` and `Faction` are taken from the **first row** of each army group; later rows should match but mismatches produce a warning.
-- `crest` and `color` are derived from `Faction` (known factions get preset colours; unknown factions use a generated abbreviation and grey).
+- `crest` and `color` are derived from `Game` + `Faction` on import (composite preset keys). Unknown factions warn and use a generated abbreviation + grey (`#888`). The app may resolve colours live from presets when displaying armies; optional `crestOverride` / `colorOverride` on an army override the catalogue.
 
 Custom pipeline states (see `settings.pipeline`) are validated on import instead of the default list.
 
