@@ -1,0 +1,17 @@
+{
+  "name": "The Muster Roll",
+  "short_name": "Muster Roll",
+  "description": "Track Warhammer armies and paints locally in your browser.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a1a1f",
+  "theme_color": "#1a1a1f",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

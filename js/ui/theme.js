@@ -10,30 +10,39 @@ export function resolveTheme(theme) {
   return theme;
 }
 
-/** @param {'dark'|'light'} resolved */
-function applyResolved(resolved) {
+const LABELS = { dark: 'Dark', light: 'Light', system: 'System' };
+const NEXT = { dark: 'light', light: 'system', system: 'dark' };
+
+/** @param {'dark'|'light'|'system'} preference */
+function applyThemePreference(preference) {
+  const resolved = resolveTheme(preference);
   document.documentElement.setAttribute('data-theme', resolved);
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = resolved === 'dark' ? '☀' : '☽';
-  btn?.setAttribute('aria-label', resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  if (btn) {
+    btn.textContent = resolved === 'dark' ? '☀' : '☽';
+    btn.setAttribute('aria-label', `Theme: ${LABELS[preference]}. Click to switch to ${LABELS[NEXT[preference]]}.`);
+    btn.setAttribute('title', `Theme: ${LABELS[preference]} (click to cycle)`);
+  }
 }
 
 export function initTheme() {
   const { settings } = getState();
-  applyResolved(resolveTheme(settings.theme));
+  applyThemePreference(settings.theme);
 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { settings: s } = getState();
-    if (s.theme === 'system') applyResolved(resolveTheme('system'));
+    if (s.theme === 'system') applyThemePreference('system');
   });
 }
 
+const CYCLE = /** @type {const} */ (['dark', 'light', 'system']);
+
 export function toggleTheme() {
   const { settings } = getState();
-  const current = resolveTheme(settings.theme);
-  const next = current === 'dark' ? 'light' : 'dark';
+  const i = CYCLE.indexOf(settings.theme);
+  const next = CYCLE[(i + 1) % CYCLE.length];
   patchSettings({ theme: next });
-  applyResolved(next);
+  applyThemePreference(next);
 }
 
 export function initThemeToggle() {
