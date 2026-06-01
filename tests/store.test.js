@@ -264,4 +264,146 @@ describe('store', () => {
     store.recordBackup();
     expect(store.getState().settings.lastBackupAt).toBeTruthy();
   });
+
+  it('undo restores removed unit', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [
+        { unit: 'Keep', qty: 1, source: '', state: 'Unassembled' },
+        { unit: 'Gone', qty: 1, source: '', state: 'Unassembled' },
+      ],
+    }]);
+    store.removeUnit('A', 1);
+    expect(store.getState().collection[0].units).toHaveLength(1);
+    expect(store.undoLast()).toBe(true);
+    expect(store.getState().collection[0].units[1].unit).toBe('Gone');
+  });
+
+  it('undo restores removed army', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'Deleted', game: '40k', faction: 'X', crest: 'D', color: '#888', units: [],
+    }]);
+    store.removeArmy('Deleted');
+    expect(store.getState().collection).toHaveLength(0);
+    expect(store.undoLast()).toBe(true);
+    expect(store.getState().collection[0].army).toBe('Deleted');
+  });
+
+  it('undo batch-states restores bulk advance', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [
+        { unit: 'U1', qty: 1, source: '', state: 'Unassembled' },
+        { unit: 'U2', qty: 1, source: '', state: 'Unassembled' },
+      ],
+    }]);
+    store.pushUndoBatchStates([
+      { armyName: 'A', index: 0, state: 'Unassembled' },
+      { armyName: 'A', index: 1, state: 'Unassembled' },
+    ]);
+    store.updateUnit('A', 0, { state: 'Primed' }, { skipUndo: true });
+    store.updateUnit('A', 1, { state: 'Primed' }, { skipUndo: true });
+    expect(store.undoLast()).toBe(true);
+    expect(store.getState().collection[0].units.map(u => u.state)).toEqual(['Unassembled', 'Unassembled']);
+  });
+
+  it('appendCollection merges units into existing army', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U1', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    store.appendCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U2', qty: 1, source: '', state: 'Primed' }],
+    }]);
+    expect(store.getState().collection).toHaveLength(1);
+    expect(store.getState().collection[0].units).toHaveLength(2);
+  });
+
+  it('appendPaints merges quantities case-insensitively', async () => {
+    const store = await freshStore();
+    store.setPaints([{ name: 'Blue', type: 'Base', swatch: '#00f', qty: 1, brand: '', source: '', notes: '' }]);
+    store.appendPaints([{ name: 'blue', type: 'Base', swatch: '#00f', qty: 2, brand: '', source: '', notes: '' }]);
+    expect(store.getState().paints).toHaveLength(1);
+    expect(store.getState().paints[0].qty).toBe(3);
+  });
+
+  it('renameArmy updates army key and rejects duplicate names', async () => {
+    const store = await freshStore();
+    store.setCollection([
+      { army: 'Old', game: '40k', faction: 'X', crest: 'O', color: '#888', units: [] },
+      { army: 'Taken', game: '40k', faction: 'X', crest: 'T', color: '#888', units: [] },
+    ]);
+    expect(store.renameArmy('Old', 'New')).toBe(true);
+    expect(store.getState().collection[0].army).toBe('New');
+    expect(store.renameArmy('New', 'Taken')).toBe(false);
+  });
+
+  it('duplicateUnit inserts a copy after the source', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'Squad', qty: 1, source: '', state: 'Primed', notes: 'x' }],
+    }]);
+    expect(store.duplicateUnit('A', 0)).toBe(true);
+    const units = store.getState().collection[0].units;
+    expect(units).toHaveLength(2);
+    expect(units[1].unit).toBe('Squad');
+    expect(units[1]).not.toBe(units[0]);
+  });
+
+  it('previewBackup validates without mutating state', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    const json = store.exportSnapshot();
+    store.setCollection([]);
+    const preview = store.previewBackup(json);
+    expect(preview.ok).toBe(true);
+    if (preview.ok) expect(preview.preview).toContain('1 armies');
+    expect(store.getState().collection).toHaveLength(0);
+  });
+
+  it('beginBatch defers persist until endBatch', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    const before = storage.getItem(STORAGE_KEY);
+    store.beginBatch({ silent: true });
+    store.updateUnit('A', 0, { state: 'Primed' }, { silent: true });
+    expect(storage.getItem(STORAGE_KEY)).toBe(before);
+    store.endBatch('collection');
+    expect(JSON.parse(storage.getItem(STORAGE_KEY)).collection[0].units[0].state).toBe('Primed');
+  });
+
+  it('applyFactionPresets refreshes army colours', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'Test', game: '40k', faction: 'Ultramarines', crest: 'OLD', color: '#000000',
+      units: [],
+    }]);
+    store.applyFactionPresets(null);
+    expect(store.getState().collection[0].crest).toBe('UM');
+    expect(store.getState().collection[0].color).toBe('#1c4fa0');
+  });
+
+  it('clearAllData resets collection and paints', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    store.setPaints([{ name: 'Red', type: 'Base', swatch: '#f00', qty: 1, brand: '', source: '', notes: '' }]);
+    store.clearAllData();
+    expect(store.getState().collection).toHaveLength(0);
+    expect(store.getState().paints).toHaveLength(0);
+  });
 });

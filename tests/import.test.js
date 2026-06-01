@@ -33,6 +33,15 @@ describe('schema detection', () => {
     expect(detectMusterPaints([['Name']])).toBe(true);
     expect(detectMusterPaints([['Name'], ['Macragge Blue']])).toBe(true);
   });
+
+  it('detects armies headers case-insensitively', () => {
+    expect(detectMusterArmies([['GAME', 'Army', 'Unit']])).toBe(true);
+    expect(detectMusterArmies([['Game', 'ARMY', 'unit']])).toBe(true);
+  });
+
+  it('does not detect armies when unit column is missing', () => {
+    expect(detectMusterArmies([['Game', 'Faction', 'Army']])).toBe(false);
+  });
 });
 
 describe('importMusterArmies', () => {

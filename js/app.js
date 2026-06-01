@@ -1,4 +1,4 @@
-import { load, subscribe, clearAllData, undoLast, getState, setCollapsedArmies } from './core/store.js';
+import { load, subscribe, clearAllData, undoLast, canUndo, getState, setCollapsedArmies } from './core/store.js';
 import { renderAll, renderArmyDomain } from './render/index.js';
 import { renderPaints } from './render/paints.js';
 import { bindArmySearch, bindArmyExpandCollapse, advanceVisibleUnits, applySourceFilterFromPaint } from './render/armies.js';
@@ -23,6 +23,25 @@ import { initPwaInstall } from './ui/pwa-install.js';
 
 let saveToastTimer;
 let lastSaveToast = 0;
+let undoFlashTimer;
+
+function updateUndoButton() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  const ready = canUndo();
+  btn.disabled = !ready;
+  btn.setAttribute('aria-disabled', ready ? 'false' : 'true');
+}
+
+function flashUndoHint() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn || btn.disabled) return;
+  btn.classList.remove('undo-flash');
+  void btn.offsetWidth;
+  btn.classList.add('undo-flash');
+  clearTimeout(undoFlashTimer);
+  undoFlashTimer = setTimeout(() => btn.classList.remove('undo-flash'), 2800);
+}
 
 function debouncedSaveToast() {
   const now = Date.now();
@@ -157,9 +176,22 @@ function bindImportExport() {
     if (await loadDemoCollection()) renderAll();
   });
 
+  document.getElementById('undoBtn')?.addEventListener('click', () => {
+    if (undoLast()) {
+      renderArmyDomain();
+      renderPaints();
+      toast('Undone');
+    } else toast('Nothing to undo');
+    updateUndoButton();
+  });
+
   document.getElementById('advanceVisible')?.addEventListener('click', () => {
-    advanceVisibleUnits();
-    toast('Advanced visible units');
+    const n = advanceVisibleUnits();
+    if (n > 0) {
+      toast(`Advanced ${n} visible unit${n === 1 ? '' : 's'} — ↩ Undo or Ctrl+Z`, 3500);
+      updateUndoButton();
+      flashUndoHint();
+    } else toast('Nothing to advance in the current view');
   });
 }
 
@@ -231,7 +263,12 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-      if (undoLast()) { renderArmyDomain(); renderPaints(); toast('Undone'); }
+      if (undoLast()) {
+        renderArmyDomain();
+        renderPaints();
+        toast('Undone');
+        updateUndoButton();
+      }
     }
   });
 
@@ -258,7 +295,10 @@ function init() {
       toast(/** @type {{ message: string }} */ (detail).message, 5000);
     }
     updateTabBadges();
+    if (reason === 'collection' || reason === 'paints' || reason === 'all') updateUndoButton();
   });
+
+  updateUndoButton();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});

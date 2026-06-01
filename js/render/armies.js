@@ -18,7 +18,6 @@ import {
   mergeArmyDuplicates,
   beginBatch,
   endBatch,
-  undoLast,
   enableSquadMembers,
   disableSquadMembers,
   updateMember,
@@ -38,6 +37,7 @@ import {
   unitPassesQuickView,
 } from '../core/members.js';
 import { DONE_STATES } from '../core/constants.js';
+import { extractTags } from '../core/tags.js';
 import {
   CANONICAL_FACTIONS,
   SUPPORTED_GAMES,
@@ -126,11 +126,6 @@ export function clearArmyFilters() {
 function filtersActive() {
   return gameFilter !== 'All' || factionFilter !== 'All' || searchTerm || stateFilter !== 'All'
     || sourceFilter !== 'All' || spearheadOnly || quickView !== 'all' || tagFilter !== 'All';
-}
-
-/** @param {string} [notes] */
-function extractTags(notes) {
-  return (notes?.match(/#[\w-]+/g) || []).map(t => t.slice(1).toLowerCase());
 }
 
 function allNoteTags() {
@@ -887,18 +882,13 @@ export function renderArmies(onChange) {
     return;
   }
 
-  host.innerHTML = `<div class="army-toolbar"><button class="btn" type="button" id="newArmyBtn">+ New army</button>
-    <button class="btn" type="button" id="undoBtn" title="Undo (Ctrl+Z)">↩ Undo</button></div>`
+  host.innerHTML = `<div class="army-toolbar"><button class="btn" type="button" id="newArmyBtn">+ New army</button></div>`
     + visible.map(va => {
       const army = getState().collection.find(x => x.army === va.army);
       if (!army) return '';
       return armyBlock({ ...army, units: va.units }, getArmyPipeline(army));
     }).join('');
   document.getElementById('newArmyBtn')?.addEventListener('click', () => createArmyFlow(onChange));
-  document.getElementById('undoBtn')?.addEventListener('click', () => {
-    if (undoLast()) { onChange(); toast('Undone'); }
-    else toast('Nothing to undo');
-  });
   bindArmyEvents(onChange);
 }
 
@@ -967,7 +957,7 @@ export function advanceVisibleUnits() {
       if (squadNext || memberNext) changes.push({ armyName: va.army, index: i, state: vu.state });
     });
   });
-  if (!changes.length) return;
+  if (!changes.length) return 0;
   pushUndoBatchStates(changes);
   beginBatch({ silent: true });
   changes.forEach(({ armyName, index }) => {
@@ -978,6 +968,7 @@ export function advanceVisibleUnits() {
   });
   endBatch('collection');
   domainRefresh?.();
+  return changes.length;
 }
 
 /** @param {string} source — filter armies tab by paint kit source (fuzzy match on select). */

@@ -104,7 +104,7 @@ _Audit: 2026-05-31 (technical). User journey audit: 2026-05-31 — see [User aud
 
 - [x] **CI: run tests on push/PR** — `.github/workflows/ci.yml`
 - [x] **Lint / typecheck script** — `npm run typecheck` (tsc + jsconfig); CI step
-- [x] **Test gaps** — `tests/dom.test.js`, `tests/sanitize.test.js` (partial; no render integration yet)
+- [x] **Test gaps** — unit tests (sanitize, store, CSV round-trip, tags, source-match); `npm run test:coverage`; Playwright smoke in `tests/e2e/`
 - [x] **`npm run dev` script** — `serve` devDependency
 - [x] **Dependabot / `npm audit`** — `.github/dependabot.yml` + audit in CI
 - [x] **Add `LICENSE`** — MIT

@@ -57,7 +57,10 @@
           <div class="toolbar-primary">
             <label class="sr-only" for="search">Search armies</label>
             <input class="search" id="search" placeholder="Search units, factions, sources… (press /)">
-            <button class="btn" id="advanceVisible" type="button" title="Advance all visible units one step">→ Advance visible</button>
+            <div class="toolbar-actions" role="group" aria-label="Advance and undo">
+              <button class="btn btn-advance" id="advanceVisible" type="button" title="Advance all visible units one step">→ Advance visible</button>
+              <button class="btn btn-undo" id="undoBtn" type="button" title="Undo last change (Ctrl+Z)" disabled aria-disabled="true">↩ Undo <span class="kbd-hint">Ctrl+Z</span></button>
+            </div>
             <button class="btn" id="expandAll" type="button">Expand</button>
             <button class="btn" id="collapseAll" type="button">Collapse</button>
           </div>

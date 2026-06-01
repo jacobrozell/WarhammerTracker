@@ -6,6 +6,7 @@ import { downloadTemplate } from '../data/export.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog } from '../ui/confirm.js';
 import { formDialog } from '../ui/form-modal.js';
+import { sourcesMatch } from '../core/source-match.js';
 
 /** @type {string} */
 let paintFilter = 'All';
@@ -16,19 +17,6 @@ let paintSearch = '';
 
 /** @type {ReturnType<typeof setTimeout>|undefined} */
 let paintSearchTimer;
-
-/** @param {string} source */
-function sourceParts(source) {
-  if (!source) return [];
-  return source.split('+').map(s => s.trim().toLowerCase()).filter(Boolean);
-}
-
-/** @param {string} paintSource @param {string} unitSource */
-function sourcesMatch(paintSource, unitSource) {
-  const us = unitSource.toLowerCase();
-  if (!us) return false;
-  return sourceParts(paintSource).some(p => us.includes(p) || p.includes(us));
-}
 
 /** @param {string} source */
 function unitsForSource(source) {

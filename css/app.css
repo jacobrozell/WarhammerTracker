@@ -275,6 +275,61 @@ header.mast {
   min-width: 200px;
 }
 
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: stretch;
+  padding: 4px;
+  border: 1px solid var(--line-warm);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.toolbar-actions .btn-advance {
+  border-color: var(--line-warm);
+}
+
+.btn-undo {
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+
+.btn-undo:not(:disabled):hover {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 3px rgba(201, 164, 76, 0.15);
+}
+
+.btn-undo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--line);
+  color: var(--ink-faint);
+}
+
+.btn-undo .kbd-hint {
+  margin-left: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.btn-undo.undo-flash {
+  animation: undo-flash 0.7s ease-in-out 3;
+}
+
+@keyframes undo-flash {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 164, 76, 0);
+    border-color: var(--gold);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(201, 164, 76, 0.35);
+    border-color: var(--gold-bright);
+    color: #fff;
+  }
+}
+
 .toolbar-group { position: relative; }
 .toolbar-group summary.btn { list-style: none; }
 .toolbar-group summary.btn::-webkit-details-marker { display: none; }
