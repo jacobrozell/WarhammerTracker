@@ -1,12 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-async function loadSampleData(page) {
-  await page.getByRole('button', { name: /Sample data/i }).click();
-  const modal = page.locator('#importModal');
-  await expect(modal).toBeVisible({ timeout: 10_000 });
-  await page.locator('#importModalOk').click();
-  await expect(modal).toBeHidden();
-}
+import { loadSampleData } from './helpers.js';
 
 test.describe('The Muster Roll', () => {
   test('loads and shows armies tab', async ({ page }) => {

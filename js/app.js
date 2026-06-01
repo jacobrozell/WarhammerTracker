@@ -71,10 +71,15 @@ function switchTab(tabId) {
   panelP?.classList.toggle('hidden', tabId !== 'paints');
   panelA?.toggleAttribute('hidden', tabId !== 'armies');
   panelP?.toggleAttribute('hidden', tabId !== 'paints');
-  location.hash = tabId === 'paints' ? 'paints' : '';
+  const nextHash = tabId === 'paints' ? '#paints' : '';
+  if (location.hash !== nextHash) location.hash = nextHash;
   updateTabBadges();
   const panel = tabId === 'paints' ? panelP : panelA;
   panel?.querySelector('.search, .btn, button')?.focus();
+}
+
+function syncTabFromHash() {
+  if (location.hash === '#paints') switchTab('paints');
 }
 
 function bindTabs() {
@@ -93,7 +98,7 @@ function bindTabs() {
       switchTab(next.dataset.tab || 'armies');
     });
   });
-  if (location.hash === '#paints') switchTab('paints');
+  window.addEventListener('hashchange', syncTabFromHash);
 }
 
 function bindImportExport() {
@@ -305,6 +310,7 @@ function init() {
   }
 
   renderAll();
+  syncTabFromHash();
 }
 
 init();

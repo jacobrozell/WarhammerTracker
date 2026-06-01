@@ -176,14 +176,15 @@ function unitPassesFilters(u, pipeline) {
   return true;
 }
 
-function sortUnits(units) {
-  const copy = [...units];
+/** @param {{ u: object, i: number }[]} entries */
+function sortUnitEntries(entries) {
+  const copy = [...entries];
   if (unitSort === 'state') {
     const pipeline = getPipeline();
     const idx = Object.fromEntries(pipeline.map((p, i) => [p.key, i]));
-    copy.sort((a, b) => (idx[a.state] ?? 0) - (idx[b.state] ?? 0) || a.unit.localeCompare(b.unit));
+    copy.sort((a, b) => (idx[a.u.state] ?? 0) - (idx[b.u.state] ?? 0) || a.u.unit.localeCompare(b.u.unit));
   } else {
-    copy.sort((a, b) => a.unit.localeCompare(b.unit));
+    copy.sort((a, b) => a.u.unit.localeCompare(b.u.unit));
   }
   return copy;
 }
@@ -206,12 +207,14 @@ function visibleArmies() {
       && (factionFilter === 'All' || a.faction === factionFilter))
     .map(a => {
       const pipeline = getArmyPipeline(a);
+      let entries = a.units.map((u, i) => ({ u, i }));
+      if (q) entries = entries.filter(({ u }) => unitMatchesSearch(u, a.army, q));
+      entries = entries.filter(({ u }) => unitPassesFilters(u, pipeline));
+      entries = sortUnitEntries(entries);
       return {
         ...a,
-        units: sortUnits(
-          (q ? a.units.filter(u => unitMatchesSearch(u, a.army, q)) : a.units)
-            .filter(u => unitPassesFilters(u, pipeline))
-        ),
+        units: entries.map(e => e.u),
+        unitEntries: entries,
       };
     })
     .filter(a => !filtersActive() ? a.units.length >= 0 : a.units.length > 0));
@@ -473,7 +476,7 @@ function unitRow(army, unit, index, pipeline, stateHex) {
   const trackSquad = squadSize(unit) >= 2;
   const expanded = isSquadExpanded(army.army, index, unit);
   const squadBtn = trackSquad
-    ? `<button type="button" class="squad-btn" data-act="squad-toggle" title="Per-model tracking" aria-expanded="${expanded}">${expanded ? '▾' : '▸'}</button>`
+    ? `<button type="button" class="squad-btn" data-act="squad-toggle" title="Per-model tracking" aria-label="Per-model tracking" aria-expanded="${expanded}">${expanded ? '▾' : '▸'}</button>`
     : '';
   const summary = hasSquadMembers(unit) && squadStateSummary(unit)
     ? `<div class="squad-summary">${escapeHtml(squadStateSummary(unit))}</div>`
@@ -513,9 +516,10 @@ function armyBlock(army, pipeline) {
   const isCollapsed = collapsedSet().has(army.army);
   const collapsed = isCollapsed ? ' collapsed' : '';
   const { crest, color } = getArmyPresentation(army, getState().settings.factionPresets);
+  const entries = army.unitEntries ?? army.units.map((u, i) => ({ u, i }));
   const unitRows = isCollapsed
     ? `<tr data-lazy-units="1"><td colspan="6" class="army-lazy-msg">${army.units.length} unit entries — expand to view</td></tr>`
-    : army.units.map((u, i) => unitRow(army, u, i, pipeline, stateHex)).join('');
+    : entries.map(({ u, i }) => unitRow(army, u, i, pipeline, stateHex)).join('');
 
   const pipeHint = army.pipeline?.length ? ' · custom pipeline' : '';
   return `<div class="army${collapsed}" style="--fac:${safeColor(color)}" data-army="${escapeAttr(army.army)}">
@@ -881,7 +885,7 @@ export function renderArmies(onChange) {
     + visible.map(va => {
       const army = getState().collection.find(x => x.army === va.army);
       if (!army) return '';
-      return armyBlock({ ...army, units: va.units }, getArmyPipeline(army));
+      return armyBlock({ ...army, units: va.units, unitEntries: va.unitEntries }, getArmyPipeline(army));
     }).join('');
   document.getElementById('newArmyBtn')?.addEventListener('click', () => createArmyFlow(onChange));
   bindArmyEvents(onChange);
