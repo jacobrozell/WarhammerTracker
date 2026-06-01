@@ -9,6 +9,7 @@ import {
   setMember,
   resizeSquadMembers,
   squadStateSummary,
+  squadGroupKey,
   unitMatchesStateFilter,
   unitPassesQuickView,
 } from '../js/core/members.js';
@@ -92,6 +93,33 @@ describe('squad members filters', () => {
     expect(unitPassesQuickView(u, pipeline, 'wip')).toBe(true);
     const allPrimed = { unit: 'Terminators (5)', state: PRIMED, members: Array(5).fill({ state: PRIMED }) };
     expect(unitPassesQuickView(allPrimed, pipeline, 'backlog')).toBe(false);
+  });
+
+  it('unitPassesQuickView ready matches Based or Done', () => {
+    const based = { unit: 'Captain', state: 'Based', qty: 1 };
+    const unassembled = { unit: 'Captain', state: pipeline[0].key, qty: 1 };
+    expect(unitPassesQuickView(based, pipeline, 'ready')).toBe(true);
+    expect(unitPassesQuickView(unassembled, pipeline, 'ready')).toBe(false);
+  });
+});
+
+describe('squadGroupKey', () => {
+  it('treats spearhead flag as part of identity', () => {
+    const a = { unit: 'Squad', qty: 1, source: 'Box', state: 'Primed', spearhead: true };
+    const b = { unit: 'Squad', qty: 1, source: 'Box', state: 'Primed', spearhead: false };
+    expect(squadGroupKey(a, b)).toBe(false);
+    expect(squadGroupKey(a, { ...a })).toBe(true);
+  });
+});
+
+describe('memberEffectiveNotes', () => {
+  it('prefers member notes over unit notes', () => {
+    const u = {
+      unit: 'Terminators (2)', state: 'Primed', notes: 'squad note',
+      members: [{ notes: 'model A' }, {}],
+    };
+    expect(memberEffectiveNotes(u, 0)).toBe('model A');
+    expect(memberEffectiveNotes(u, 1)).toBe('squad note');
   });
 });
 

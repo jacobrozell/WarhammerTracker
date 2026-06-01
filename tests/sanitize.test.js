@@ -164,4 +164,79 @@ describe('sanitize', () => {
     );
     expect(result.ok).toBe(true);
   });
+
+  it('preserves valid filter and sort settings', () => {
+    const result = sanitizeAppState({
+      collection: [],
+      paints: [],
+      settings: {
+        gameFilter: '40k',
+        armySort: 'progress',
+        unitSort: 'state',
+        quickView: 'wip',
+        tagFilter: 'spearhead',
+        spearheadOnly: true,
+        collapsedArmies: ['My Army'],
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const s = result.state.settings;
+      expect(s.gameFilter).toBe('40k');
+      expect(s.armySort).toBe('progress');
+      expect(s.unitSort).toBe('state');
+      expect(s.quickView).toBe('wip');
+      expect(s.tagFilter).toBe('spearhead');
+      expect(s.spearheadOnly).toBe(true);
+      expect(s.collapsedArmies).toEqual(['My Army']);
+    }
+  });
+
+  it('ignores invalid sort and quickView values', () => {
+    const result = sanitizeAppState({
+      collection: [],
+      paints: [],
+      settings: { armySort: 'random', quickView: 'soon' },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.settings.armySort).toBeUndefined();
+      expect(result.state.settings.quickView).toBeUndefined();
+    }
+  });
+
+  it('sanitizes per-army pipeline and theme overrides', () => {
+    const result = sanitizeAppState({
+      collection: [{
+        army: 'A', game: '40k', faction: 'UM', crest: 'A', color: '#111',
+        crestOverride: 'XX',
+        colorOverride: 'javascript:x',
+        pipeline: [{ key: 'Done', hex: '#0f0' }, { key: '', hex: '#000' }],
+        units: [],
+      }],
+      paints: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const army = result.state.collection[0];
+      expect(army.crestOverride).toBe('XX');
+      expect(army.colorOverride).toBe('#888');
+      expect(army.pipeline).toHaveLength(1);
+      expect(army.pipeline[0].hex).toBe('#0f0');
+    }
+  });
+
+  it('sanitizes user faction preset overrides', () => {
+    const result = sanitizeAppState({
+      collection: [],
+      paints: [],
+      settings: {
+        factionPresets: { '40k:Custom': ['AB', '#112233'], bad: 'nope' },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.settings.factionPresets).toEqual({ '40k:Custom': ['AB', '#112233'] });
+    }
+  });
 });

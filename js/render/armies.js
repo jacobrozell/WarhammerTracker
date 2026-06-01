@@ -27,6 +27,7 @@ import {
   collectionProgress,
   progressSegments,
   buildStateHexMap,
+  nextPipelineState,
 } from '../core/pipeline.js';
 import {
   hasSquadMembers,
@@ -220,20 +221,14 @@ function visibleUnits() {
   return visibleArmies().flatMap(a => a.units);
 }
 
-function nextStateKey(current, pipeline) {
-  const i = pipeline.findIndex(p => p.key === current);
-  if (i < 0 || i >= pipeline.length - 1) return null;
-  return pipeline[i + 1].key;
-}
-
 /** @param {string} armyName @param {number} i @param {object} u @param {import('../core/constants.js').PipelineStage[]} pipeline */
 function advanceUnitOneStep(armyName, i, u, pipeline) {
-  const squadNext = nextStateKey(u.state, pipeline);
+  const squadNext = nextPipelineState(u.state, pipeline);
   if (hasSquadMembers(u)) {
     if (squadNext) updateUnit(armyName, i, { state: squadNext }, { silent: true, skipUndo: true });
     u.members.forEach((_, mi) => {
       const cur = memberEffectiveState(u, mi);
-      const next = nextStateKey(cur, pipeline);
+      const next = nextPipelineState(cur, pipeline);
       if (!next) return;
       const patch = next === u.state ? { state: '' } : { state: next };
       updateMember(armyName, i, mi, patch, { silent: true });
@@ -446,7 +441,7 @@ function stateSelectHtml(state, pipeline, stateHex, act) {
 function memberRow(army, unit, unitIndex, memberIndex, pipeline, stateHex, showSpear) {
   const st = memberEffectiveState(unit, memberIndex);
   const hex = stateHex[st] || '#888';
-  const next = nextStateKey(st, pipeline);
+  const next = nextPipelineState(st, pipeline);
   const nextBtn = next
     ? `<button class="next-st" type="button" data-act="member-next" title="Advance model to ${escapeAttr(next)}">→</button>`
     : '';
@@ -467,7 +462,7 @@ function memberRow(army, unit, unitIndex, memberIndex, pipeline, stateHex, showS
 function unitRow(army, unit, index, pipeline, stateHex) {
   const showSpear = army.units.some(u => u.spearhead !== undefined);
   const hex = stateHex[unit.state] || '#888';
-  const next = nextStateKey(unit.state, pipeline);
+  const next = nextPipelineState(unit.state, pipeline);
   const nextBtn = next
     ? `<button class="next-st" type="button" data-act="next" title="Advance squad default to ${escapeAttr(next)}">→</button>`
     : '';
@@ -677,7 +672,7 @@ function bindArmyEvents(onChange) {
       const army = getState().collection.find(a => a.army === armyName);
       const { u } = findUnit(armyName, index);
       const pipeline = getArmyPipeline(army);
-      const next = u ? nextStateKey(u.state, pipeline) : null;
+      const next = u ? nextPipelineState(u.state, pipeline) : null;
       if (next) {
         updateUnit(armyName, index, { state: next });
         onChange();
@@ -692,7 +687,7 @@ function bindArmyEvents(onChange) {
       const pipeline = getArmyPipeline(army);
       if (!u || mi < 0) return;
       const cur = memberEffectiveState(u, mi);
-      const next = nextStateKey(cur, pipeline);
+      const next = nextPipelineState(cur, pipeline);
       if (next) {
         const patch = next === u.state ? { state: '' } : { state: next };
         updateMember(armyName, index, mi, patch);
@@ -708,9 +703,9 @@ function bindArmyEvents(onChange) {
       /** @type {{ armyName: string, index: number, state: string }[]} */
       const changes = [];
       army.units.forEach((u, i) => {
-        const squadNext = nextStateKey(u.state, pipeline);
+        const squadNext = nextPipelineState(u.state, pipeline);
         const memberNext = hasSquadMembers(u)
-          && u.members.some((_, mi) => nextStateKey(memberEffectiveState(u, mi), pipeline));
+          && u.members.some((_, mi) => nextPipelineState(memberEffectiveState(u, mi), pipeline));
         if (squadNext || memberNext) changes.push({ armyName, index: i, state: u.state });
       });
       pushUndoBatchStates(changes);
@@ -951,9 +946,9 @@ export function advanceVisibleUnits() {
     va.units.forEach(vu => {
       const i = army.units.indexOf(vu);
       if (i < 0) return;
-      const squadNext = nextStateKey(vu.state, pipeline);
+      const squadNext = nextPipelineState(vu.state, pipeline);
       const memberNext = hasSquadMembers(vu)
-        && vu.members.some((_, mi) => nextStateKey(memberEffectiveState(vu, mi), pipeline));
+        && vu.members.some((_, mi) => nextPipelineState(memberEffectiveState(vu, mi), pipeline));
       if (squadNext || memberNext) changes.push({ armyName: va.army, index: i, state: vu.state });
     });
   });

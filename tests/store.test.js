@@ -406,4 +406,83 @@ describe('store', () => {
     expect(store.getState().collection).toHaveLength(0);
     expect(store.getState().paints).toHaveLength(0);
   });
+
+  it('setAllUnitsState updates every unit in an army', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [
+        { unit: 'U1', qty: 1, source: '', state: 'Unassembled' },
+        { unit: 'U2', qty: 1, source: '', state: 'Unassembled' },
+      ],
+    }]);
+    expect(store.setAllUnitsState('A', 'Primed')).toBe(true);
+    expect(store.getState().collection[0].units.every(u => u.state === 'Primed')).toBe(true);
+  });
+
+  it('squad member enable, update, and disable', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'Terminators (2)', qty: 1, source: '', state: 'Magnetising' }],
+    }]);
+    expect(store.enableSquadMembers('A', 0)).toBe(true);
+    expect(store.getState().collection[0].units[0].members).toHaveLength(2);
+    expect(store.updateMember('A', 0, 1, { state: 'Primed', notes: 'lead' })).toBe(true);
+    expect(store.getState().collection[0].units[0].members[1].state).toBe('Primed');
+    expect(store.disableSquadMembers('A', 0)).toBe(true);
+    expect(store.getState().collection[0].units[0].members).toBeUndefined();
+  });
+
+  it('enableSquadMembers fails for single-model units', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'Captain', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    expect(store.enableSquadMembers('A', 0)).toBe(false);
+  });
+
+  it('addArmy rejects duplicate names', async () => {
+    const store = await freshStore();
+    const army = { army: 'Dup', game: '40k', faction: 'X', crest: 'D', color: '#888', units: [] };
+    expect(store.addArmy(army)).toBe(true);
+    expect(store.addArmy({ ...army })).toBe(false);
+  });
+
+  it('setCollapsedArmies round-trips through settings', async () => {
+    const store = await freshStore();
+    store.setCollapsedArmies(new Set(['Alpha', 'Beta']));
+    expect(store.getCollapsedArmies()).toEqual(new Set(['Alpha', 'Beta']));
+  });
+
+  it('canUndo reflects undo stack', async () => {
+    const store = await freshStore();
+    expect(store.canUndo()).toBe(false);
+    store.setCollection([{
+      army: 'A', game: '40k', faction: 'X', crest: 'A', color: '#888',
+      units: [{ unit: 'U', qty: 1, source: '', state: 'Unassembled' }],
+    }]);
+    store.updateUnit('A', 0, { state: 'Primed' });
+    expect(store.canUndo()).toBe(true);
+  });
+
+  it('updatePaint rejects rename to existing name', async () => {
+    const store = await freshStore();
+    store.setPaints([
+      { name: 'Red', type: 'Base', swatch: '#f00', qty: 1, brand: '', source: '', notes: '' },
+      { name: 'Blue', type: 'Base', swatch: '#00f', qty: 1, brand: '', source: '', notes: '' },
+    ]);
+    expect(store.updatePaint('Red', { name: 'Blue' })).toBe(false);
+  });
+
+  it('reapplyArmyFactionDefaults syncs crest and color', async () => {
+    const store = await freshStore();
+    store.setCollection([{
+      army: 'GK', game: '40k', faction: 'Grey Knights', crest: 'OLD', color: '#000',
+      units: [],
+    }]);
+    expect(store.reapplyArmyFactionDefaults('GK')).toBe(true);
+    expect(store.getState().collection[0].crest).toBe('GK');
+  });
 });

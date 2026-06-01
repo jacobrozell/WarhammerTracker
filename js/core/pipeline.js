@@ -94,6 +94,13 @@ export function getPipelineForArmy(army, custom) {
   return resolvePipeline(src);
 }
 
+/** @param {string} current @param {import('./constants.js').PipelineStage[]} pipeline */
+export function nextPipelineState(current, pipeline) {
+  const i = pipeline.findIndex(p => p.key === current);
+  if (i < 0 || i >= pipeline.length - 1) return null;
+  return pipeline[i + 1].key;
+}
+
 /**
  * @param {{ settings: import('./constants.js').Settings }} storeRef
  * @param {import('./constants.js').PipelineStage[]} pipeline

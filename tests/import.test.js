@@ -174,6 +174,16 @@ describe('import registry', () => {
     expect(result.errors[0]).toContain('Unrecognised paints CSV');
   });
 
+  it('imports ambiguous headers as paints when paints domain is expected', () => {
+    const rows = [
+      ['Name', 'Game', 'Army', 'Unit'],
+      ['Macragge Blue', '40k', 'Chapter', 'Intercessors'],
+    ];
+    const result = runImport(rows, {}, 'paints');
+    expect(result.ok).toBe(true);
+    expect(result.data[0].name).toBe('Macragge Blue');
+  });
+
   it('reports unrecognised format', () => {
     const result = runImport([['Foo', 'Bar']], {}, 'armies');
     expect(result.ok).toBe(false);
